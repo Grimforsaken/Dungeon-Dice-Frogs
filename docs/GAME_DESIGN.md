@@ -125,11 +125,9 @@ STR affects:
 - Heavy-armor movement penalty removal at STR 12+
 - The bonus-XP system tied to recovered loot/treasure
 
-Carrying capacity is measured in **slots**. STR adds slots using the shared thresholds above.
+Carrying capacity is measured in **slots**. Base carrying capacity is **6 slots**. STR adds slots using the shared thresholds above.
 
 A purchased **backpack adds 4 carry slots**.
-
-The base number of carry slots remains open for balancing.
 
 ### Dexterity
 
@@ -140,14 +138,12 @@ DEX affects:
 - Movement
 - Dual-dagger eligibility
 
-Movement is measured in squares per turn. DEX adds movement using the shared thresholds:
+Base movement is **5 squares per turn**. DEX adds movement using the shared thresholds:
 
 - 12: +1 square
 - 14: +2 squares
 - 16: +3 squares
 - 18: +4 squares
-
-The base movement value remains open for balancing.
 
 ## Party movement
 
