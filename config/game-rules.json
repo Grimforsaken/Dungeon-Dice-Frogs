@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "status": "preproduction-balance-baseline",
+  "character": {
+    "statRoll": "3d6",
+    "stats": ["strength", "dexterity", "constitution"],
+    "leveling": {
+      "xpPerLevelStep": 10,
+      "level2TotalXp": 10,
+      "killsGrantXp": false,
+      "fractionalXp": false
+    }
+  },
+  "party": {
+    "helpersUnlockDungeonFloor": 30,
+    "maxHelpers": 2,
+    "xpSplit": {
+      "method": "equal-whole-shares",
+      "remainderRecipient": "player"
+    }
+  },
+  "loot": {
+    "regularEnemyLootChancePercent": 20,
+    "ordinaryChestMimicChancePercent": null,
+    "lootTierFloorSpan": 10,
+    "nextTierEnemyIntroductionStartsAtBandMidpoint": true,
+    "boss": {
+      "uniqueLootGuaranteed": true,
+      "progressionKeyGuaranteed": true,
+      "guardedChestGuaranteed": true,
+      "guardedChestCanBeMimic": false
+    }
+  },
+  "travel": {
+    "normalReturnRequiresTraversingFloors": true,
+    "scrollOfReturn": {
+      "consumable": true,
+      "returnsPartyToTown": true,
+      "returnPortalTargetsExactUseLocation": true,
+      "portalClosesAfterDungeonReturn": true
+    }
+  },
+  "combat": {
+    "actionsPerTurn": ["attack", "stand-ground", "use-item"],
+    "physicalDieColor": "gray",
+    "dexterityExtraAttackChancePercentPerPoint": 2,
+    "strengthBonusChancePercentPerPoint": 3,
+    "strengthBonusPhysicalDamage": 1,
+    "weapons": {
+      "dagger": {
+        "damageDie": "d2",
+        "baseAttacks": 2,
+        "extraAttackCheck": true,
+        "maxAttacks": 3,
+        "bleedChancePercentPerAttack": 0
+      },
+      "straightBlade": {
+        "damageDie": "d4",
+        "baseAttacks": 1,
+        "extraAttackCheck": true,
+        "maxAttacks": 2,
+        "bleedChancePercentPerAttack": 15,
+        "heavyArmorPenalty": true
+      },
+      "axe": {
+        "damageDie": "d6",
+        "baseAttacks": 1,
+        "extraAttackCheck": false,
+        "maxAttacks": 1,
+        "bleedChancePercentPerAttack": 30,
+        "heavyArmorPerformance": "better-than-straight-blade"
+      },
+      "blunt": {
+        "damageDie": "d8",
+        "baseAttacks": 1,
+        "extraAttackCheck": false,
+        "skipEveryNthAttackTurn": 3,
+        "ignoreShield": true,
+        "ignoreArmorClassPoints": 2
+      }
+    },
+    "bleed": {
+      "stackable": true,
+      "durationTurns": 4,
+      "damage": 1,
+      "damageEveryNthTurn": 2,
+      "totalDamagePerFullStack": 2
+    },
+    "armorClass": {
+      "none": 0,
+      "leather": 1,
+      "heavyLeather": 2,
+      "chain": 3,
+      "scale": 4,
+      "plate": 5
+    },
+    "enchantments": {
+      "firstAttackOnlyPerTurn": true,
+      "fire": {
+        "color": "red",
+        "durationDie": "d6",
+        "damagePerTurn": 1,
+        "generationWeightPercent": 40
+      },
+      "ice": {
+        "color": "blue",
+        "durationDie": "d6",
+        "skipAttackEveryOtherTurn": true,
+        "generationWeightPercent": 20
+      },
+      "lightning": {
+        "color": "yellow",
+        "damageDie": "d3",
+        "skipNextTurn": true,
+        "metalArmorDamageMultiplier": 2,
+        "generationWeightPercent": 10
+      },
+      "poison": {
+        "color": "green",
+        "damageDiePerTurn": "d2",
+        "durationTurns": 3,
+        "generationWeightPercent": 30
+      }
+    }
+  },
+  "town": {
+    "sellsBasicEquipment": true,
+    "sellsSimpleNonEnchantedStarterWeapons": true,
+    "enchantedWeaponsRoutineTownPurchase": false
+  },
+  "openBalanceItems": {
+    "ordinaryChestMimicChancePercent": "TBD: intentionally low",
+    "lootTierXpValues": "TBD: higher tiers grant more XP",
+    "strengthBasedBonusXpRoll": "TBD: applies to qualifying recovered loot/treasure",
+    "carryingCapacityFormula": "TBD",
+    "constitutionHpFormula": "TBD",
+    "constitutionResistanceFormula": "TBD",
+    "initiativeAndAdditionalTurnThresholds": "TBD",
+    "standGroundDefenseBonus": "TBD",
+    "axeArmorPenetrationValue": "TBD",
+    "straightBladeHeavyArmorPenalty": "TBD"
+  }
+}
