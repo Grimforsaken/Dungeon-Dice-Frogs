@@ -16,7 +16,13 @@ Character levels use small whole-number XP totals.
 - Level 4: 30 total XP
 - Continue at +10 total XP per level.
 
-Higher-tier loot awards more XP than lower-tier loot. Exact per-tier XP values remain configurable for balancing.
+Loot awards XP **one-for-one with its loot tier**:
+
+- Tier 1 loot = 1 XP
+- Tier 2 loot = 2 XP
+- Tier 3 loot = 3 XP
+- Tier 4 loot = 4 XP
+- Continue the same pattern for higher tiers.
 
 ### Party XP split
 
@@ -53,7 +59,7 @@ The guarded boss chest uses loot appropriate to that floor's tier.
 ### Chests and Mimics
 
 - Chests appear throughout dungeon floors.
-- A small configurable percentage of ordinary chests are Mimics.
+- **5% of ordinary chests are Mimics.**
 - Boss-guarded chests are never Mimics.
 - Mimics are enemies and therefore award no XP for the kill itself; their recovered loot can still award XP.
 
@@ -67,9 +73,91 @@ Loot tiers advance every 10 dungeon floors.
 - Tier 4: floors 31–40
 - Continue in 10-floor bands.
 
-Starting around the midpoint of each 10-floor band, encounters increasingly include enemies associated with the next tier. This previews upcoming threats and gives dangerous early access to higher-tier enemy loot.
+Starting around the midpoint of each 10-floor band, encounters increasingly include enemies associated with the next tier.
+
+Enemy difficulty scales by a cumulative **×1.5 per tier** relative to the previous tier:
+
+- Tier 1: ×1.00 baseline
+- Tier 2: ×1.50
+- Tier 3: ×2.25
+- Tier 4: ×3.375
 
 Helpers unlock at **dungeon floor 30**.
+
+## Character creation
+
+Every current character stat is rolled on **3d6**, producing a 3–18 range. The same rule applies to the player and hired helpers.
+
+Current stats:
+
+- Strength (STR)
+- Dexterity (DEX)
+- Constitution (CON)
+
+## Shared stat thresholds
+
+Several systems use the same threshold ladder:
+
+- 12 = +1
+- 14 = +2
+- 16 = +3
+- 18 = +4
+
+The earlier supplied CON value of 28 for +4 HP is treated as **18**, because 3d6 cannot produce 28.
+
+### Constitution
+
+CON bonus HP:
+
+- 12: +1 HP
+- 14: +2 HP
+- 16: +3 HP
+- 18: +4 HP
+
+CON also governs resistances; the exact resistance formula remains open for balancing.
+
+### Strength
+
+STR affects:
+
+- Physical bonus-damage chance
+- Carrying capacity
+- Heavy-armor movement penalty removal at STR 12+
+- The bonus-XP system tied to recovered loot/treasure
+
+Carrying capacity is measured in **slots**. STR adds slots using the shared thresholds above.
+
+A purchased **backpack adds 4 carry slots**.
+
+The base number of carry slots remains open for balancing.
+
+### Dexterity
+
+DEX affects:
+
+- Turn order / initiative
+- Extra-attack chance for eligible weapons
+- Movement
+- Dual-dagger eligibility
+
+Movement is measured in squares per turn. DEX adds movement using the shared thresholds:
+
+- 12: +1 square
+- 14: +2 squares
+- 16: +3 squares
+- 18: +4 squares
+
+The base movement value remains open for balancing.
+
+## Party movement
+
+The party's movement speed is determined by the **lowest DEX among the current party members**.
+
+Movement modifiers include:
+
+- Shield: -1 square
+- Heavy armor: -1 square
+- Heavy-armor penalty is ignored when the wearer has STR 12+
 
 ## Town
 
@@ -82,6 +170,7 @@ Town can sell:
 - Basic equipment
 - Simple non-enchanted starter weapons
 - Basic utility/consumable items
+- Backpacks (+4 carry slots)
 - Scrolls of Return, subject to economy balancing
 
 Enchanted weapons are intended primarily as dungeon rewards rather than routine town purchases.
@@ -104,35 +193,7 @@ When used:
 - The player may hire up to two helpers.
 - Helpers have their own rolled stats, HP, equipment, level, and XP.
 - XP is split using the whole-number equal-share rule above.
-
-## Character creation
-
-Current baseline uses **3d6** for core physical stats:
-
-- Strength (STR)
-- Dexterity (DEX)
-- Constitution (CON)
-
-The same rule applies when a hireable helper is generated.
-
-## Core stats
-
-### Strength
-
-- Physical damage bonus chance
-- Carrying capacity
-- Used by the bonus-XP system when qualifying loot/treasure is recovered; exact bonus-XP resolution remains subject to final balancing
-
-### Dexterity
-
-- Turn order / initiative
-- Extra-attack chance for eligible weapons
-- Potential future additional-turn thresholds
-
-### Constitution
-
-- Maximum HP
-- Resistance to physical and elemental conditions
+- Party movement is limited by the lowest DEX in the party.
 
 ## Armor Class
 
@@ -147,6 +208,28 @@ Current baseline:
 - Scale: AC 4
 - Plate: AC 5
 
-Shields can add AC separately.
+A shield adds **+1 AC** but reduces movement by **1 square**.
 
-Weapon families interact with armor differently; see `COMBAT_BALANCE.md`.
+Heavy armor reduces movement by **1 square** unless the wearer has STR 12+.
+
+## Stand Ground
+
+Stand Ground defensive bonus depends on armor category:
+
+- No armor: +0
+- Light armor: +1
+- Medium armor: +2
+- Heavy armor: +3
+- Shield: +1 additional defense
+
+## Weapon additions
+
+Two-handed weapons increase the physical damage die:
+
+- Two-handed straight blade: **d6**
+- Two-handed axe: **d8**
+- Two-handed blunt weapon: **d10**
+
+At DEX 12+, a character may use two daggers. Dual daggers use the two-attack pattern with a maximum potential of three strikes and impose **-2 AC**.
+
+See `COMBAT_BALANCE.md` for the full weapon and enchantment rules.
