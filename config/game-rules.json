@@ -1,41 +1,24 @@
 {
-  "version": 3,
+  "version": 4,
   "status": "preproduction-balance-baseline",
   "character": {
     "statRoll": "3d6",
     "statRange": {"min": 3, "max": 18},
     "stats": ["strength", "dexterity", "constitution"],
-    "thresholdBonuses": {
-      "12": 1,
-      "14": 2,
-      "16": 3,
-      "18": 4
-    },
+    "thresholdBonuses": {"12": 1, "14": 2, "16": 3, "18": 4},
     "constitution": {
       "bonusHpByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4},
       "note": "18 is used for +4 HP because stats are rolled on 3d6; the supplied value 28 was treated as a typo."
     },
-    "strength": {
-      "bonusCarrySlotsByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4}
-    },
-    "dexterity": {
-      "bonusMovementSquaresByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4}
-    },
-    "leveling": {
-      "xpPerLevelStep": 10,
-      "level2TotalXp": 10,
-      "killsGrantXp": false,
-      "fractionalXp": false
-    }
+    "strength": {"bonusCarrySlotsByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4}},
+    "dexterity": {"bonusMovementSquaresByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4}},
+    "leveling": {"xpPerLevelStep": 10, "level2TotalXp": 10, "killsGrantXp": false, "fractionalXp": false}
   },
   "party": {
     "helpersUnlockDungeonFloor": 30,
     "maxHelpers": 2,
     "movementUsesLowestPartyDexterity": true,
-    "xpSplit": {
-      "method": "equal-whole-shares",
-      "remainderRecipient": "player"
-    }
+    "xpSplit": {"method": "equal-whole-shares", "remainderRecipient": "player"}
   },
   "loot": {
     "regularEnemyLootChancePercent": 20,
@@ -60,7 +43,39 @@
     "capacityUnit": "slots",
     "baseCarrySlots": 6,
     "backpackBonusSlots": 4,
-    "strengthBonusUsesCharacterThresholds": true
+    "strengthBonusUsesCharacterThresholds": true,
+    "screen": {
+      "slotsAlwaysVisible": true,
+      "emptySlotsVisible": true,
+      "equippedItemsConsumeCarrySlots": false
+    }
+  },
+  "equipmentUI": {
+    "showCharacter": true,
+    "inventoryTrayPosition": "bottom",
+    "inventoryTrayShows": "carried-equipable-items",
+    "dragAndDropEquip": true,
+    "dragAndDropUnequip": true,
+    "rejectInvalidSlotDrops": true,
+    "slots": {
+      "helmet": {"enabled": false, "reservedForFutureUpdate": true},
+      "chest": {"enabled": true, "itemType": "armor-chest-piece"},
+      "hand1": {"enabled": true},
+      "hand2": {"enabled": true},
+      "ring1": {"enabled": false, "reservedForFutureUpdate": true},
+      "ring2": {"enabled": false, "reservedForFutureUpdate": true},
+      "necklace": {"enabled": false, "reservedForFutureUpdate": true}
+    },
+    "hands": {
+      "oneHandedWeaponPlusShieldAllowed": true,
+      "dualDaggersAllowedAtDexterity": 12,
+      "twoHandedWeapon": {
+        "occupiesPrimaryHandSlot": true,
+        "blocksSecondHandSlot": true,
+        "secondHandOverlay": "red-x",
+        "blockedSlotRejectsDrops": true
+      }
+    }
   },
   "movement": {
     "unit": "squares-per-turn",
@@ -87,129 +102,33 @@
     "strengthBonusChancePercentPerPoint": 3,
     "strengthBonusPhysicalDamage": 1,
     "weapons": {
-      "dagger": {
-        "damageDie": "d2",
-        "baseAttacks": 2,
-        "extraAttackCheck": true,
-        "maxAttacks": 3,
-        "bleedChancePercentPerAttack": 0
-      },
-      "dualDaggers": {
-        "minimumDexterity": 12,
-        "baseAttacks": 2,
-        "maxAttacks": 3,
-        "armorClassPenalty": 2,
-        "enchantmentAppliesOnlyToFirstAttack": true
-      },
-      "straightBlade": {
-        "damageDie": "d4",
-        "baseAttacks": 1,
-        "extraAttackCheck": true,
-        "maxAttacks": 2,
-        "bleedChancePercentPerAttack": 15,
-        "heavyArmorPenalty": true
-      },
-      "twoHandedStraightBlade": {
-        "damageDie": "d6",
-        "hands": 2
-      },
-      "axe": {
-        "damageDie": "d6",
-        "baseAttacks": 1,
-        "extraAttackCheck": false,
-        "maxAttacks": 1,
-        "bleedChancePercentPerAttack": 30,
-        "heavyArmorPerformance": "better-than-straight-blade"
-      },
-      "twoHandedAxe": {
-        "damageDie": "d8",
-        "hands": 2,
-        "baseAttacks": 1,
-        "bleedChancePercentPerAttack": 30
-      },
-      "blunt": {
-        "damageDie": "d8",
-        "baseAttacks": 1,
-        "extraAttackCheck": false,
-        "skipEveryNthAttackTurn": 3,
-        "ignoreShield": true,
-        "ignoreArmorClassPoints": 2
-      },
-      "twoHandedBlunt": {
-        "damageDie": "d10",
-        "hands": 2,
-        "baseAttacks": 1,
-        "skipEveryNthAttackTurn": 3,
-        "ignoreShield": true,
-        "ignoreArmorClassPoints": 2
-      }
+      "dagger": {"damageDie": "d2", "baseAttacks": 2, "extraAttackCheck": true, "maxAttacks": 3, "bleedChancePercentPerAttack": 0},
+      "dualDaggers": {"minimumDexterity": 12, "baseAttacks": 2, "maxAttacks": 3, "armorClassPenalty": 2, "enchantmentAppliesOnlyToFirstAttack": true},
+      "straightBlade": {"damageDie": "d4", "baseAttacks": 1, "extraAttackCheck": true, "maxAttacks": 2, "bleedChancePercentPerAttack": 15, "heavyArmorPenalty": true},
+      "twoHandedStraightBlade": {"damageDie": "d6", "hands": 2},
+      "axe": {"damageDie": "d6", "baseAttacks": 1, "extraAttackCheck": false, "maxAttacks": 1, "bleedChancePercentPerAttack": 30, "heavyArmorPerformance": "better-than-straight-blade"},
+      "twoHandedAxe": {"damageDie": "d8", "hands": 2, "baseAttacks": 1, "bleedChancePercentPerAttack": 30},
+      "blunt": {"damageDie": "d8", "baseAttacks": 1, "extraAttackCheck": false, "skipEveryNthAttackTurn": 3, "ignoreShield": true, "ignoreArmorClassPoints": 2},
+      "twoHandedBlunt": {"damageDie": "d10", "hands": 2, "baseAttacks": 1, "skipEveryNthAttackTurn": 3, "ignoreShield": true, "ignoreArmorClassPoints": 2}
     },
-    "bleed": {
-      "stackable": true,
-      "durationTurns": 4,
-      "damage": 1,
-      "damageEveryNthTurn": 2,
-      "totalDamagePerFullStack": 2
-    },
+    "bleed": {"stackable": true, "durationTurns": 4, "damage": 1, "damageEveryNthTurn": 2, "totalDamagePerFullStack": 2},
     "armor": {
-      "armorClass": {
-        "none": 0,
-        "leather": 1,
-        "heavyLeather": 2,
-        "chain": 3,
-        "scale": 4,
-        "plate": 5
-      },
-      "categories": {
-        "light": ["leather", "heavyLeather"],
-        "medium": ["chain", "scale"],
-        "heavy": ["plate"]
-      },
-      "shield": {
-        "armorClassBonus": 1,
-        "movementPenaltySquares": 1
-      },
-      "heavyArmor": {
-        "movementPenaltySquares": 1,
-        "penaltyNegatedAtStrength": 12
-      }
+      "armorClass": {"none": 0, "leather": 1, "heavyLeather": 2, "chain": 3, "scale": 4, "plate": 5},
+      "categories": {"light": ["leather", "heavyLeather"], "medium": ["chain", "scale"], "heavy": ["plate"]},
+      "armorSlot": "chest",
+      "shield": {"armorClassBonus": 1, "movementPenaltySquares": 1},
+      "heavyArmor": {"movementPenaltySquares": 1, "penaltyNegatedAtStrength": 12}
     },
     "standGround": {
-      "bonusByArmorCategory": {
-        "none": 0,
-        "light": 1,
-        "medium": 2,
-        "heavy": 3
-      },
+      "bonusByArmorCategory": {"none": 0, "light": 1, "medium": 2, "heavy": 3},
       "additionalBonusWithShield": 1
     },
     "enchantments": {
       "firstAttackOnlyPerTurn": true,
-      "fire": {
-        "color": "red",
-        "durationDie": "d6",
-        "damagePerTurn": 1,
-        "generationWeightPercent": 40
-      },
-      "ice": {
-        "color": "blue",
-        "durationDie": "d6",
-        "skipAttackEveryOtherTurn": true,
-        "generationWeightPercent": 20
-      },
-      "lightning": {
-        "color": "yellow",
-        "damageDie": "d3",
-        "skipNextTurn": true,
-        "metalArmorDamageMultiplier": 2,
-        "generationWeightPercent": 10
-      },
-      "poison": {
-        "color": "green",
-        "damageDiePerTurn": "d2",
-        "durationTurns": 3,
-        "generationWeightPercent": 30
-      }
+      "fire": {"color": "red", "durationDie": "d6", "damagePerTurn": 1, "generationWeightPercent": 40},
+      "ice": {"color": "blue", "durationDie": "d6", "skipAttackEveryOtherTurn": true, "generationWeightPercent": 20},
+      "lightning": {"color": "yellow", "damageDie": "d3", "skipNextTurn": true, "metalArmorDamageMultiplier": 2, "generationWeightPercent": 10},
+      "poison": {"color": "green", "damageDiePerTurn": "d2", "durationTurns": 3, "generationWeightPercent": 30}
     }
   },
   "town": {
