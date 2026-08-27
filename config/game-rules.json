@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "status": "preproduction-balance-baseline",
   "character": {
     "statRoll": "3d6",
@@ -58,13 +58,13 @@
   },
   "inventory": {
     "capacityUnit": "slots",
-    "baseCarrySlots": null,
+    "baseCarrySlots": 6,
     "backpackBonusSlots": 4,
     "strengthBonusUsesCharacterThresholds": true
   },
   "movement": {
     "unit": "squares-per-turn",
-    "baseSquaresPerTurn": null,
+    "baseSquaresPerTurn": 5,
     "partyMovementUsesLowestDexterity": true,
     "dexterityBonusUsesCharacterThresholds": true,
     "shieldPenaltySquares": 1,
@@ -219,8 +219,6 @@
     "backpackBonusSlots": 4
   },
   "openBalanceItems": {
-    "baseCarrySlots": "TBD",
-    "baseMovementSquaresPerTurn": "TBD",
     "strengthBasedBonusXpRoll": "TBD: applies to qualifying recovered loot/treasure",
     "constitutionResistanceFormula": "TBD",
     "axeArmorPenetrationValue": "TBD",
