@@ -229,3 +229,30 @@ Two-handed weapons increase the physical damage die:
 At DEX 12+, a character may use two daggers. Dual daggers use the two-attack pattern with a maximum potential of three strikes and impose **-2 AC**.
 
 See `COMBAT_BALANCE.md` for the full weapon and enchantment rules.
+
+## Inventory and equipment screens
+
+The inventory screen shows carrying capacity as visible slots. The base six slots are always visible, with additional visible slots added for STR bonuses and backpacks.
+
+The equipment screen shows the character with dedicated equipment boxes around them and a draggable equipable-item tray along the bottom of the screen.
+
+Current equipment slots:
+
+- Chest armor
+- Hand 1
+- Hand 2
+
+Reserved visible slots for future updates:
+
+- Helmet
+- Ring 1
+- Ring 2
+- Necklace
+
+Armor is a single chest piece. One-handed weapons and shields use the two hand boxes. A character with DEX 12+ may place a dagger in each hand.
+
+When a two-handed weapon is equipped, it occupies the primary hand and blocks the other hand. The second hand box displays a large **red X** and rejects additional equipment until the two-handed weapon is removed.
+
+Equipable items carried by the character appear at the bottom of the equipment screen and can be dragged onto compatible equipment boxes. Equipped items can be dragged back into open inventory capacity.
+
+See `UI_EQUIPMENT.md` for the detailed interaction rules and future-slot behavior.
