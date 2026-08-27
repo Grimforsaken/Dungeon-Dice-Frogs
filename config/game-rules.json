@@ -1,9 +1,26 @@
 {
-  "version": 1,
+  "version": 2,
   "status": "preproduction-balance-baseline",
   "character": {
     "statRoll": "3d6",
+    "statRange": {"min": 3, "max": 18},
     "stats": ["strength", "dexterity", "constitution"],
+    "thresholdBonuses": {
+      "12": 1,
+      "14": 2,
+      "16": 3,
+      "18": 4
+    },
+    "constitution": {
+      "bonusHpByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4},
+      "note": "18 is used for +4 HP because stats are rolled on 3d6; the supplied value 28 was treated as a typo."
+    },
+    "strength": {
+      "bonusCarrySlotsByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4}
+    },
+    "dexterity": {
+      "bonusMovementSquaresByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4}
+    },
     "leveling": {
       "xpPerLevelStep": 10,
       "level2TotalXp": 10,
@@ -14,6 +31,7 @@
   "party": {
     "helpersUnlockDungeonFloor": 30,
     "maxHelpers": 2,
+    "movementUsesLowestPartyDexterity": true,
     "xpSplit": {
       "method": "equal-whole-shares",
       "remainderRecipient": "player"
@@ -21,8 +39,10 @@
   },
   "loot": {
     "regularEnemyLootChancePercent": 20,
-    "ordinaryChestMimicChancePercent": null,
+    "ordinaryChestMimicChancePercent": 5,
     "lootTierFloorSpan": 10,
+    "xpPerLootTier": "one-for-one",
+    "examples": {"tier1": 1, "tier2": 2, "tier3": 3},
     "nextTierEnemyIntroductionStartsAtBandMidpoint": true,
     "boss": {
       "uniqueLootGuaranteed": true,
@@ -30,6 +50,26 @@
       "guardedChestGuaranteed": true,
       "guardedChestCanBeMimic": false
     }
+  },
+  "enemies": {
+    "difficultyMultiplierPerTier": 1.5,
+    "difficultyScaling": "cumulative",
+    "tierExamples": {"tier1": 1.0, "tier2": 1.5, "tier3": 2.25, "tier4": 3.375}
+  },
+  "inventory": {
+    "capacityUnit": "slots",
+    "baseCarrySlots": null,
+    "backpackBonusSlots": 4,
+    "strengthBonusUsesCharacterThresholds": true
+  },
+  "movement": {
+    "unit": "squares-per-turn",
+    "baseSquaresPerTurn": null,
+    "partyMovementUsesLowestDexterity": true,
+    "dexterityBonusUsesCharacterThresholds": true,
+    "shieldPenaltySquares": 1,
+    "heavyArmorPenaltySquares": 1,
+    "heavyArmorPenaltyNegatedAtStrength": 12
   },
   "travel": {
     "normalReturnRequiresTraversingFloors": true,
@@ -54,6 +94,13 @@
         "maxAttacks": 3,
         "bleedChancePercentPerAttack": 0
       },
+      "dualDaggers": {
+        "minimumDexterity": 12,
+        "baseAttacks": 2,
+        "maxAttacks": 3,
+        "armorClassPenalty": 2,
+        "enchantmentAppliesOnlyToFirstAttack": true
+      },
       "straightBlade": {
         "damageDie": "d4",
         "baseAttacks": 1,
@@ -61,6 +108,10 @@
         "maxAttacks": 2,
         "bleedChancePercentPerAttack": 15,
         "heavyArmorPenalty": true
+      },
+      "twoHandedStraightBlade": {
+        "damageDie": "d6",
+        "hands": 2
       },
       "axe": {
         "damageDie": "d6",
@@ -70,10 +121,24 @@
         "bleedChancePercentPerAttack": 30,
         "heavyArmorPerformance": "better-than-straight-blade"
       },
+      "twoHandedAxe": {
+        "damageDie": "d8",
+        "hands": 2,
+        "baseAttacks": 1,
+        "bleedChancePercentPerAttack": 30
+      },
       "blunt": {
         "damageDie": "d8",
         "baseAttacks": 1,
         "extraAttackCheck": false,
+        "skipEveryNthAttackTurn": 3,
+        "ignoreShield": true,
+        "ignoreArmorClassPoints": 2
+      },
+      "twoHandedBlunt": {
+        "damageDie": "d10",
+        "hands": 2,
+        "baseAttacks": 1,
         "skipEveryNthAttackTurn": 3,
         "ignoreShield": true,
         "ignoreArmorClassPoints": 2
@@ -86,13 +151,37 @@
       "damageEveryNthTurn": 2,
       "totalDamagePerFullStack": 2
     },
-    "armorClass": {
-      "none": 0,
-      "leather": 1,
-      "heavyLeather": 2,
-      "chain": 3,
-      "scale": 4,
-      "plate": 5
+    "armor": {
+      "armorClass": {
+        "none": 0,
+        "leather": 1,
+        "heavyLeather": 2,
+        "chain": 3,
+        "scale": 4,
+        "plate": 5
+      },
+      "categories": {
+        "light": ["leather", "heavyLeather"],
+        "medium": ["chain", "scale"],
+        "heavy": ["plate"]
+      },
+      "shield": {
+        "armorClassBonus": 1,
+        "movementPenaltySquares": 1
+      },
+      "heavyArmor": {
+        "movementPenaltySquares": 1,
+        "penaltyNegatedAtStrength": 12
+      }
+    },
+    "standGround": {
+      "bonusByArmorCategory": {
+        "none": 0,
+        "light": 1,
+        "medium": 2,
+        "heavy": 3
+      },
+      "additionalBonusWithShield": 1
     },
     "enchantments": {
       "firstAttackOnlyPerTurn": true,
@@ -126,17 +215,14 @@
   "town": {
     "sellsBasicEquipment": true,
     "sellsSimpleNonEnchantedStarterWeapons": true,
-    "enchantedWeaponsRoutineTownPurchase": false
+    "enchantedWeaponsRoutineTownPurchase": false,
+    "backpackBonusSlots": 4
   },
   "openBalanceItems": {
-    "ordinaryChestMimicChancePercent": "TBD: intentionally low",
-    "lootTierXpValues": "TBD: higher tiers grant more XP",
+    "baseCarrySlots": "TBD",
+    "baseMovementSquaresPerTurn": "TBD",
     "strengthBasedBonusXpRoll": "TBD: applies to qualifying recovered loot/treasure",
-    "carryingCapacityFormula": "TBD",
-    "constitutionHpFormula": "TBD",
     "constitutionResistanceFormula": "TBD",
-    "initiativeAndAdditionalTurnThresholds": "TBD",
-    "standGroundDefenseBonus": "TBD",
     "axeArmorPenetrationValue": "TBD",
     "straightBladeHeavyArmorPenalty": "TBD"
   }
