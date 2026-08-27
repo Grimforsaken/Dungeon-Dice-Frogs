@@ -10,9 +10,54 @@ Each character chooses one action on their turn:
 
 ## Rolled stats
 
-Player characters and hired helpers currently roll **3d6** for STR, DEX, and CON, producing a 3–18 range.
+Every current character stat is rolled on **3d6**, producing a 3–18 range. This applies to the player character and hired helpers.
 
-## Dexterity and extra attacks
+Current physical stats:
+
+- Strength (STR)
+- Dexterity (DEX)
+- Constitution (CON)
+
+## Shared stat thresholds
+
+CON, STR carrying capacity, and DEX movement use the same threshold ladder:
+
+- 12 = +1
+- 14 = +2
+- 16 = +3
+- 18 = +4
+
+The previously supplied CON value of 28 for +4 HP is recorded as **18**, because 3d6 cannot exceed 18 and this preserves the 12/14/16 progression.
+
+## Constitution and HP
+
+CON grants bonus HP:
+
+- CON 12: +1 HP
+- CON 14: +2 HP
+- CON 16: +3 HP
+- CON 18: +4 HP
+
+The base HP formula remains open for balancing.
+
+## Dexterity, movement, and extra attacks
+
+### Party movement
+
+Party movement speed is determined by the **lowest DEX in the active party**.
+
+Base movement in squares per turn remains configurable. DEX then adds:
+
+- DEX 12: +1 square
+- DEX 14: +2 squares
+- DEX 16: +3 squares
+- DEX 18: +4 squares
+
+A shield reduces movement by **1 square**.
+
+Heavy armor reduces movement by **1 square**, unless the wearer has **STR 12 or higher**.
+
+### Extra attacks
 
 Current balance rule:
 
@@ -21,12 +66,21 @@ Current balance rule:
 This produces 6% at DEX 3 and 36% at DEX 18.
 
 - Straight blades: 1 normal attack; successful DEX check grants a 2nd attack.
-- Daggers: always 2 attacks; successful DEX check grants a 3rd attack.
+- Daggers: 2 attacks; successful DEX check grants a 3rd attack.
 - The extra-attack check is rolled simultaneously with the first attack.
 
-## Strength bonus
+### Dual daggers
 
-Current balance rule:
+At **DEX 12 or higher**, a character may equip two daggers.
+
+- 2 attacks are made when attacking.
+- The DEX extra-attack check can raise this to a maximum of 3 strikes.
+- Dual-wielding daggers reduces the character's AC by **2**.
+- An enchantment still applies only to the first attack of the turn.
+
+## Strength
+
+Current combat balance rule:
 
 **Strength bonus chance = STR × 3%**
 
@@ -34,21 +88,35 @@ This produces 9% at STR 3 and 54% at STR 18.
 
 On success, add **+1 physical damage to the first attack of that character's turn**.
 
-Strength also affects carrying capacity. The loot-based bonus-XP mechanic also keys off Strength, but its final exact roll is still open for tuning.
+### Carrying capacity
+
+Carrying capacity is measured in **inventory slots**.
+
+STR increases carrying capacity using the shared thresholds:
+
+- STR 12: +1 slot
+- STR 14: +2 slots
+- STR 16: +3 slots
+- STR 18: +4 slots
+
+A purchased **backpack adds 4 slots**.
+
+The base number of carry slots remains configurable.
 
 ## Weapon families
 
 ### Dagger
 
 - Physical die: **d2**
-- Always attacks twice per turn when attacking.
+- 2 attacks when using the current dagger attack pattern.
 - DEX extra-attack success grants a third attack.
 - Best suited to unarmored/lightly armored targets.
 - Enchantment triggers only on the first attack of the turn.
 
 ### Straight Blade
 
-- Example physical die: **d4**
+- One-handed physical die: **d4**
+- Two-handed straight blade physical die: **d6**
 - 1 attack normally.
 - DEX extra-attack success grants a second attack.
 - Stronger against light armor.
@@ -58,7 +126,8 @@ Strength also affects carrying capacity. The loot-based bonus-XP mechanic also k
 
 ### Axe
 
-- Example physical die: **d6**
+- One-handed physical die: **d6**
+- Two-handed axe physical die: **d8**
 - 1 attack per turn.
 - More physical damage than straight blades.
 - Slightly more effective against heavier armor than straight blades.
@@ -66,7 +135,8 @@ Strength also affects carrying capacity. The loot-based bonus-XP mechanic also k
 
 ### Blunt Weapon
 
-- Example physical die: **d8**
+- One-handed physical die: **d8**
+- Two-handed blunt physical die: **d10**
 - 1 attack on its normal attack turns.
 - Slow: every third attack turn is skipped.
 - Most effective against heavy armor.
@@ -87,7 +157,7 @@ Each qualifying physical attack rolls its own bleed chance simultaneously with d
 
 ## Armor Class
 
-AC starts at 0 and rises with armor. Heavier armor should increasingly reduce the effectiveness of small/fast weapons while preserving the role of axes and especially blunt weapons.
+AC starts at 0 and rises with armor.
 
 Current armor baseline:
 
@@ -98,7 +168,36 @@ Current armor baseline:
 - Scale: 4
 - Plate: 5
 
-Shields are tracked separately so blunt weapons can ignore them.
+Armor categories for Stand Ground:
+
+- Light: Leather / Heavy Leather
+- Medium: Chain / Scale
+- Heavy: Plate
+
+### Shields
+
+A shield:
+
+- Adds **+1 AC**.
+- Reduces movement by **1 square**.
+
+Blunt weapons ignore shield AC.
+
+### Heavy armor
+
+Heavy armor reduces movement by **1 square** unless the wearer has **STR 12+**.
+
+## Stand Ground / Defend
+
+Stand Ground gives a temporary defensive bonus based on worn armor:
+
+- No armor: +0
+- Light armor: +1
+- Medium armor: +2
+- Heavy armor: +3
+- Shield: an additional +1
+
+The bonus lasts for the defensive period defined by the turn system.
 
 ## Elemental enchantments
 
@@ -130,14 +229,14 @@ Physical damage dice are **gray**. Elemental dice are color-coded and rolled sim
 
 ## Initial enchantment rarity weights
 
-To balance strength of effects, current generation weights are:
+Current generation weights:
 
 - Fire: 40%
 - Poison: 30%
 - Ice: 20%
 - Lightning: 10%
 
-These are balance values, not lore restrictions, and should be playtested.
+These remain balance values subject to playtesting.
 
 ## Simultaneous first-attack roll
 
