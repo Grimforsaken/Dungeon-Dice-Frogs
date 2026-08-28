@@ -25,10 +25,11 @@ data class EnemyTemplate(
     val id: String,
     val name: String,
     val icon: String,
-    val tierOneStats: HeroStats
+    val tierOneStats: HeroStats,
+    val elementalAttack: ElementType? = null
 ) {
     fun statsForTier(tier: Int): HeroStats {
-        val bonus = (tier.coerceAtLeast(1) - 1)
+        val bonus = tier.coerceAtLeast(1) - 1
         return HeroStats(
             strength = tierOneStats.strength + bonus,
             dexterity = tierOneStats.dexterity + bonus,
@@ -72,13 +73,13 @@ fun resolveElementAgainstFrog(color: FrogColor, element: ElementType, damage: In
     return ElementResolution(damage.coerceAtLeast(0), true, false)
 }
 
-/** Tier 1 enemy roster derived from the seven Feed the Frog bugs. */
+/** Tier 1 enemy roster: the seven Feed the Frog bugs. */
 val tierOneBugEnemies: List<EnemyTemplate> = listOf(
     EnemyTemplate("fly", "Fly", "🪰", HeroStats(5, 12, 5)),
-    EnemyTemplate("mosquito", "Mosquito / Gnat", "🦟", HeroStats(4, 13, 5)),
-    EnemyTemplate("ladybug", "Ladybug", "🐞", HeroStats(7, 8, 9)),
-    EnemyTemplate("dragonfly", "Dragonfly", "🪰", HeroStats(8, 13, 7)),
-    EnemyTemplate("bee", "Bee", "🐝", HeroStats(8, 11, 7)),
+    EnemyTemplate("mosquito", "Mosquito", "🦟", HeroStats(4, 13, 5)),
     EnemyTemplate("butterfly", "Butterfly", "🦋", HeroStats(5, 10, 6)),
-    EnemyTemplate("caterpillar", "Caterpillar", "🐛", HeroStats(8, 5, 10))
+    EnemyTemplate("bee", "Bee", "🐝", HeroStats(8, 11, 7)),
+    EnemyTemplate("dragonfly", "Dragonfly", "🪰", HeroStats(8, 13, 7)),
+    EnemyTemplate("poison_fly", "Poison Fly", "☠️🪰", HeroStats(6, 11, 7), ElementType.POISON),
+    EnemyTemplate("firefly", "Firefly", "🔥🪰", HeroStats(6, 12, 6), ElementType.FIRE)
 )
