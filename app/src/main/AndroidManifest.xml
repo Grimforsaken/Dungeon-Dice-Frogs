@@ -7,7 +7,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DungeonDiceFrogs">
         <activity
-            android:name=".TownMainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
