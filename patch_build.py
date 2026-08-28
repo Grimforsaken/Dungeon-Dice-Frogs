@@ -6,6 +6,8 @@ s = p.read_text()
 if 'import androidx.compose.foundation.layout.BoxScope' not in s:
     s = s.replace('import androidx.compose.foundation.layout.Box\n', 'import androidx.compose.foundation.layout.Box\nimport androidx.compose.foundation.layout.BoxScope\n')
 
+s = s.replace('import androidx.compose.foundation.layout.weight\n', '')
+s = s.replace('import androidx.compose.ui.input.pointer.consume\n', '')
 s = s.replace('private fun TownBuilding(', 'private fun BoxScope.TownBuilding(')
 s = s.replace(
     'val ac = (chest?.armorClass ?: 0) + if (shield) 1 else 0 - if (dualDaggers) 2 else 0',
@@ -18,6 +20,10 @@ s = s.replace(
 s = s.replace(
     'Chip("AC", ac); Chip("MOVE", move); Chip("CARRY", 6 + thresholdBonus(stats.strength) + if (inventory.contains("backpack")) 4 else 0)',
     'Chip("AC", ac); Chip("MOVE", move); Chip("CARRY", 6 + thresholdBonus(stats.strength) + (if (inventory.contains("backpack")) 4 else 0))'
+)
+s = s.replace(
+    'onDrag = { change, amount -> change.consume(); onMove(amount) },',
+    'onDrag = { _, amount -> onMove(amount) },'
 )
 
 p.write_text(s)
