@@ -1,0 +1,37 @@
+{
+  "tier": 1,
+  "floors": "1-10",
+  "regularEnemyLootChancePercent": 20,
+  "killsGrantXp": false,
+  "tierScaling": {
+    "strengthPerTierAfterTier1": 1,
+    "dexterityPerTierAfterTier1": 1,
+    "constitutionPerTierAfterTier1": 1,
+    "cumulativeDifficultyMultiplierPerTier": 1.5
+  },
+  "artIdentity": {
+    "fly": "black fuzzy body, huge red eyes, damaged/translucent wings",
+    "mosquito": "long proboscis, red segmented abdomen, thin insect body",
+    "dragonfly": "blue/gold dragon-like insect with four wings and long tail",
+    "butterfly": "ornate blue/gold/yellow butterfly-like insect",
+    "bee": "yellow/black bee-like humanoid insect; one variant carries a shield",
+    "poisonFly": "green/purple toxic insect with poison/slime effects",
+    "firefly": "orange/red fire insect using actual flames"
+  },
+  "variants": [
+    {"id":"fly_v1","species":"Fly","variant":1,"artKey":"fly_black_fuzzy_red_eyes_1","str":5,"dex":11,"con":6,"hp":6,"ac":0,"move":5,"weapon":"dagger"},
+    {"id":"fly_v2","species":"Fly","variant":2,"artKey":"fly_black_fuzzy_red_eyes_2","str":6,"dex":10,"con":7,"hp":7,"ac":1,"move":5,"weapon":"short_sword"},
+    {"id":"mosquito_v1","species":"Mosquito","variant":1,"artKey":"mosquito_long_proboscis_red_abdomen_1","str":4,"dex":13,"con":5,"hp":5,"ac":0,"move":6,"weapon":"dagger"},
+    {"id":"mosquito_v2","species":"Mosquito","variant":2,"artKey":"mosquito_long_proboscis_red_abdomen_2","str":5,"dex":12,"con":6,"hp":6,"ac":0,"move":6,"weapon":"short_sword"},
+    {"id":"butterfly_v1","species":"Butterfly","variant":1,"artKey":"butterfly_blue_gold_1","str":6,"dex":11,"con":6,"hp":6,"ac":0,"move":5,"weapon":"dagger"},
+    {"id":"butterfly_v2","species":"Butterfly","variant":2,"artKey":"butterfly_blue_gold_2","str":7,"dex":12,"con":6,"hp":6,"ac":1,"move":6,"weapon":"short_sword"},
+    {"id":"bee_v1","species":"Bee","variant":1,"artKey":"bee_honey_1","str":8,"dex":10,"con":8,"hp":8,"ac":1,"move":5,"weapon":"dagger"},
+    {"id":"bee_v2","species":"Bee","variant":2,"artKey":"bee_honey_shield_2","str":9,"dex":9,"con":9,"hp":9,"baseAc":1,"baseMove":5,"shield":true,"effectiveAc":2,"effectiveMove":4,"weapon":"short_sword"},
+    {"id":"dragonfly_v1","species":"Dragonfly","variant":1,"artKey":"dragonfly_blue_draconic_1","str":7,"dex":13,"con":6,"hp":6,"ac":1,"move":6,"weapon":"short_sword"},
+    {"id":"dragonfly_v2","species":"Dragonfly","variant":2,"artKey":"dragonfly_blue_draconic_2","str":8,"dex":14,"con":7,"hp":7,"ac":1,"move":7,"weapon":"dagger"},
+    {"id":"poison_fly_v1","species":"Poison Fly","variant":1,"artKey":"poison_fly_green_purple_blunt_1","str":9,"dex":8,"con":9,"hp":9,"ac":1,"move":4,"weapon":"blunt","element":"poison"},
+    {"id":"poison_fly_v2","species":"Poison Fly","variant":2,"artKey":"poison_fly_green_purple_axe_2","str":8,"dex":10,"con":8,"hp":8,"ac":1,"move":5,"weapon":"axe","element":"poison"},
+    {"id":"firefly_v1","species":"Firefly","variant":1,"artKey":"firefly_actual_fire_1","str":6,"dex":12,"con":6,"hp":6,"ac":0,"move":6,"weapon":"dagger","element":"fire"},
+    {"id":"firefly_v2","species":"Firefly","variant":2,"artKey":"firefly_actual_fire_2","str":5,"dex":13,"con":6,"hp":6,"ac":0,"move":6,"weapon":"short_sword","element":"fire"}
+  ]
+}
