@@ -22,14 +22,30 @@ data class HeroStats(
     val constitution: Int
 )
 
-data class EnemyTemplate(
+enum class EnemyWeaponStyle(val displayName: String) {
+    DAGGER("Dagger"),
+    SHORT_SWORD("Short Sword"),
+    AXE("Axe"),
+    BLUNT("Blunt")
+}
+
+data class EnemyVariant(
     val id: String,
-    val name: String,
+    val species: String,
+    val variant: Int,
     val icon: String,
+    val artKey: String,
     val tierOneStats: HeroStats,
+    val hp: Int,
+    val armorClass: Int,
+    val move: Int,
+    val weapon: EnemyWeaponStyle,
+    val hasShield: Boolean = false,
     val elementalAttack: ElementType? = null
 ) {
-    /** Every tier after Tier 1 adds +1 to every enemy stat. */
+    val name: String get() = "$species Variant $variant"
+
+    /** Every tier after Tier 1 adds +1 to STR, DEX, and CON. */
     fun statsForTier(tier: Int): HeroStats {
         val bonus = tier.coerceAtLeast(1) - 1
         return HeroStats(
@@ -38,6 +54,16 @@ data class EnemyTemplate(
             constitution = tierOneStats.constitution + bonus
         )
     }
+
+    fun attackText(): String = when (weapon) {
+        EnemyWeaponStyle.DAGGER -> "2 strikes, chance of 3"
+        EnemyWeaponStyle.SHORT_SWORD -> "1 strike, chance of 2"
+        EnemyWeaponStyle.AXE -> "1 strike; 30% bleed chance"
+        EnemyWeaponStyle.BLUNT -> "1 strike; ignores shield and 2 AC; skips every 3rd attack turn"
+    }
+
+    fun effectiveArmorClass(): Int = armorClass + if (hasShield) 1 else 0
+    fun effectiveMove(): Int = (move - if (hasShield) 1 else 0).coerceAtLeast(1)
 }
 
 fun roll3d6Stat(): Int = (1..3).sumOf { Random.nextInt(1, 7) }
@@ -101,13 +127,32 @@ fun nextTierEnemiesCanAppear(floor: Int): Boolean {
 /** Cumulative difficulty multiplier: 1.0, 1.5, 2.25, 3.375 ... */
 fun enemyDifficultyMultiplier(tier: Int): Double = 1.5.pow((tier.coerceAtLeast(1) - 1).toDouble())
 
-/** Tier 1 enemy roster: the seven Feed the Frog bugs. */
-val tierOneBugEnemies: List<EnemyTemplate> = listOf(
-    EnemyTemplate("fly", "Fly", "🪰", HeroStats(5, 12, 5)),
-    EnemyTemplate("mosquito", "Mosquito", "🦟", HeroStats(4, 13, 5)),
-    EnemyTemplate("butterfly", "Butterfly", "🦋", HeroStats(5, 10, 6)),
-    EnemyTemplate("bee", "Bee", "🐝", HeroStats(8, 11, 7)),
-    EnemyTemplate("dragonfly", "Dragonfly", "🪰", HeroStats(8, 13, 7)),
-    EnemyTemplate("poison_fly", "Poison Fly", "☠️🪰", HeroStats(6, 11, 7), ElementType.POISON),
-    EnemyTemplate("firefly", "Firefly", "🔥🪰", HeroStats(6, 12, 6), ElementType.FIRE)
+/**
+ * Tier 1 uses two variants of each of the seven Feed the Frog bugs.
+ * Art identity is important:
+ * - Fly = black fuzzy body, huge red eyes.
+ * - Mosquito = long proboscis, red abdomen.
+ * - Dragonfly = blue dragon-like insect with long tail and four wings.
+ */
+val tierOneBugEnemies: List<EnemyVariant> = listOf(
+    EnemyVariant("fly_v1", "Fly", 1, "🪰", "fly_black_fuzzy_red_eyes_1", HeroStats(5, 11, 6), hp = 6, armorClass = 0, move = 5, weapon = EnemyWeaponStyle.DAGGER),
+    EnemyVariant("fly_v2", "Fly", 2, "🪰", "fly_black_fuzzy_red_eyes_2", HeroStats(6, 10, 7), hp = 7, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.SHORT_SWORD),
+
+    EnemyVariant("mosquito_v1", "Mosquito", 1, "🦟", "mosquito_long_proboscis_red_abdomen_1", HeroStats(4, 13, 5), hp = 5, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.DAGGER),
+    EnemyVariant("mosquito_v2", "Mosquito", 2, "🦟", "mosquito_long_proboscis_red_abdomen_2", HeroStats(5, 12, 6), hp = 6, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD),
+
+    EnemyVariant("butterfly_v1", "Butterfly", 1, "🦋", "butterfly_blue_gold_1", HeroStats(6, 11, 6), hp = 6, armorClass = 0, move = 5, weapon = EnemyWeaponStyle.DAGGER),
+    EnemyVariant("butterfly_v2", "Butterfly", 2, "🦋", "butterfly_blue_gold_2", HeroStats(7, 12, 6), hp = 6, armorClass = 1, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD),
+
+    EnemyVariant("bee_v1", "Bee", 1, "🐝", "bee_honey_1", HeroStats(8, 10, 8), hp = 8, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.DAGGER),
+    EnemyVariant("bee_v2", "Bee", 2, "🐝", "bee_honey_shield_2", HeroStats(9, 9, 9), hp = 9, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.SHORT_SWORD, hasShield = true),
+
+    EnemyVariant("dragonfly_v1", "Dragonfly", 1, "🐉", "dragonfly_blue_draconic_1", HeroStats(7, 13, 6), hp = 6, armorClass = 1, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD),
+    EnemyVariant("dragonfly_v2", "Dragonfly", 2, "🐉", "dragonfly_blue_draconic_2", HeroStats(8, 14, 7), hp = 7, armorClass = 1, move = 7, weapon = EnemyWeaponStyle.DAGGER),
+
+    EnemyVariant("poison_fly_v1", "Poison Fly", 1, "☠️🪰", "poison_fly_green_purple_blunt_1", HeroStats(9, 8, 9), hp = 9, armorClass = 1, move = 4, weapon = EnemyWeaponStyle.BLUNT, elementalAttack = ElementType.POISON),
+    EnemyVariant("poison_fly_v2", "Poison Fly", 2, "☠️🪰", "poison_fly_green_purple_axe_2", HeroStats(8, 10, 8), hp = 8, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.AXE, elementalAttack = ElementType.POISON),
+
+    EnemyVariant("firefly_v1", "Firefly", 1, "🔥🪰", "firefly_actual_fire_1", HeroStats(6, 12, 6), hp = 6, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.DAGGER, elementalAttack = ElementType.FIRE),
+    EnemyVariant("firefly_v2", "Firefly", 2, "🔥🪰", "firefly_actual_fire_2", HeroStats(5, 13, 6), hp = 6, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD, elementalAttack = ElementType.FIRE)
 )
