@@ -88,7 +88,7 @@ fun DungeonDiceFrogsApp() {
         var strength by rememberSaveable { mutableStateOf(0) }
         var dexterity by rememberSaveable { mutableStateOf(0) }
         var constitution by rememberSaveable { mutableStateOf(0) }
-        var level by rememberSaveable { mutableStateOf(1) }
+        var xp by rememberSaveable { mutableStateOf(0) }
         var unspentStatPoints by rememberSaveable { mutableStateOf(0) }
         var screenName by rememberSaveable { mutableStateOf(Screen.TOWN.name) }
         var coins by rememberSaveable { mutableStateOf(20) }
@@ -108,6 +108,7 @@ fun DungeonDiceFrogsApp() {
         val color = frogColorName?.let { runCatching { FrogColor.valueOf(it) }.getOrNull() }
         val hasCharacter = color != null && strength > 0 && dexterity > 0 && constitution > 0
         val stats = HeroStats(strength, dexterity, constitution)
+        val level = levelForXp(xp)
 
         Surface(Modifier.fillMaxSize(), color = Dark) {
             if (!hasCharacter) {
@@ -116,7 +117,7 @@ fun DungeonDiceFrogsApp() {
                     strength = rolledStats.strength
                     dexterity = rolledStats.dexterity
                     constitution = rolledStats.constitution
-                    level = 1
+                    xp = 0
                     unspentStatPoints = 0
                     screenName = Screen.TOWN.name
                     notice = "${chosenColor.displayName} frog created. Immune to ${elementalImmunityText(chosenColor)}."
@@ -140,6 +141,7 @@ fun DungeonDiceFrogsApp() {
                             stats = stats,
                             frogColor = currentColor,
                             level = level,
+                            xp = xp,
                             unspentStatPoints = unspentStatPoints,
                             inventory = inventory,
                             catalog = gear,
@@ -159,11 +161,37 @@ fun DungeonDiceFrogsApp() {
                         Screen.DUNGEON -> DungeonScreen(
                             frogColor = currentColor,
                             level = level,
+                            xp = xp,
                             highestDungeonFloor = highestDungeonFloor,
-                            onLevelUp = {
-                                level += 1
-                                unspentStatPoints += 2
-                                notice = "Level $level reached. You gained 2 stat points."
+                            helperCount = helpers.size,
+                            onRecoverLoot = { lootTier ->
+                                val award = xpForRecoveredLootTier(lootTier)
+                                val participants = 1 + helpers.size
+                                val equalShare = award / participants
+                                val remainder = award % participants
+                                val playerGain = equalShare + remainder
+
+                                val oldPlayerLevel = levelForXp(xp)
+                                xp += playerGain
+                                val newPlayerLevel = levelForXp(xp)
+                                val playerPoints = statPointsEarnedForLevelIncrease(oldPlayerLevel, newPlayerLevel)
+                                unspentStatPoints += playerPoints
+
+                                helpers.forEach { helper ->
+                                    val oldHelperLevel = levelForXp(helper.xp)
+                                    helper.xp += equalShare
+                                    val newHelperLevel = levelForXp(helper.xp)
+                                    helper.level = newHelperLevel
+                                    helper.unspentStatPoints += statPointsEarnedForLevelIncrease(oldHelperLevel, newHelperLevel)
+                                }
+
+                                val levelMessage = if (playerPoints > 0) {
+                                    " Level $newPlayerLevel reached: +$playerPoints stat points."
+                                } else ""
+                                val helperMessage = if (helpers.isNotEmpty()) {
+                                    " Helpers each receive $equalShare XP."
+                                } else ""
+                                notice = "Recovered Tier $lootTier loot: $award XP total. Player receives $playerGain XP.$helperMessage$levelMessage"
                             },
                             onAdvanceFloor = {
                                 highestDungeonFloor += 1
@@ -174,7 +202,7 @@ fun DungeonDiceFrogsApp() {
                                 strength = 0
                                 dexterity = 0
                                 constitution = 0
-                                level = 1
+                                xp = 0
                                 unspentStatPoints = 0
                                 equipped.clear()
                                 helpers.clear()
@@ -214,9 +242,9 @@ private fun CharacterCreationScreen(onCreated: (FrogColor, HeroStats) -> Unit) {
     ) {
         Text("DUNGEON DICE FROGS", color = Gold, fontWeight = FontWeight.Black, fontSize = 27.sp, modifier = Modifier.padding(top = 24.dp))
         Text("Create Your Frog", color = Cream, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(bottom = 18.dp))
-        Text("Choose a color. Your color makes you completely immune to its matching element.", color = Cream, textAlign = TextAlign.Center, fontSize = 13.sp)
+        Text("Choose a color first. Your color makes you completely immune to its matching element.", color = Cream, textAlign = TextAlign.Center, fontSize = 13.sp)
 
-        FrogColor.entries.forEach { frogColor ->
+        FrogColor.values().forEach { frogColor ->
             val selectedThis = frogColor == selected
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
@@ -238,7 +266,7 @@ private fun CharacterCreationScreen(onCreated: (FrogColor, HeroStats) -> Unit) {
             }
         }
 
-        if (selected != null) {
+        if (selected != null && !rolled) {
             Button(
                 onClick = {
                     val stats = rollCharacterStats()
@@ -248,7 +276,7 @@ private fun CharacterCreationScreen(onCreated: (FrogColor, HeroStats) -> Unit) {
                 },
                 modifier = Modifier.padding(top = 16.dp)
             ) {
-                Text(if (rolled) "Roll 3d6 Again" else "Roll 3d6 For Each Stat")
+                Text("Roll 3d6 For Each Stat")
             }
         }
 
@@ -258,6 +286,7 @@ private fun CharacterCreationScreen(onCreated: (FrogColor, HeroStats) -> Unit) {
                 StatRollCard("DEX", rolledDexterity)
                 StatRollCard("CON", rolledConstitution)
             }
+            Text("These are this frog's starting stats.", color = Cream, fontSize = 11.sp, modifier = Modifier.padding(bottom = 10.dp))
             Button(onClick = { onCreated(selected, HeroStats(rolledStrength, rolledDexterity, rolledConstitution)) }) {
                 Text("Begin Adventure")
             }
@@ -326,6 +355,7 @@ fun EquipmentScreen(
     stats: HeroStats,
     frogColor: FrogColor,
     level: Int,
+    xp: Int,
     unspentStatPoints: Int,
     inventory: MutableList<String>,
     catalog: Map<String, Gear>,
@@ -346,7 +376,10 @@ fun EquipmentScreen(
 
     Box(Modifier.fillMaxSize().background(Dark).padding(bottom = 82.dp)) {
         Column(Modifier.fillMaxSize()) {
-            Header("Hero Equipment", "${frogColor.displayName} Frog • Level $level • Immune: ${frogColor.immuneElement.name.lowercase()}")
+            Header(
+                "Hero Equipment",
+                "${frogColor.displayName} Frog • Level $level • XP $xp/${xpRequiredForNextLevel(xp)} • Immune: ${frogColor.immuneElement.name.lowercase()}"
+            )
             Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                 Chip("STR", stats.strength)
                 Chip("DEX", stats.dexterity)
@@ -513,12 +546,17 @@ private fun Header(title: String, subtitle: String) {
 fun DungeonScreen(
     frogColor: FrogColor,
     level: Int,
+    xp: Int,
     highestDungeonFloor: Int,
-    onLevelUp: () -> Unit,
+    helperCount: Int,
+    onRecoverLoot: (Int) -> Unit,
     onAdvanceFloor: () -> Unit,
     onCharacterDeath: () -> Unit
 ) {
-    val tier = ((highestDungeonFloor.coerceAtLeast(1) - 1) / 10) + 1
+    val tier = tierForDungeonFloor(highestDungeonFloor)
+    val difficulty = enemyDifficultyMultiplier(tier)
+    val transition = nextTierEnemiesCanAppear(highestDungeonFloor)
+
     Column(
         Modifier.fillMaxSize().background(Dark).padding(bottom = 82.dp).verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -526,17 +564,32 @@ fun DungeonScreen(
         Text("♜", fontSize = 72.sp, color = Color(0xFFD33B31), modifier = Modifier.padding(top = 16.dp))
         Text("TOWER DUNGEON", color = Gold, fontWeight = FontWeight.Black, fontSize = 25.sp)
         Text("Floor $highestDungeonFloor • Tier $tier • Hero Level $level", color = Cream, fontSize = 15.sp)
+        Text("XP $xp / ${xpRequiredForNextLevel(xp)} • Enemy kills give 0 XP", color = Cream, fontSize = 11.sp)
         Text("${frogColor.displayName} immunity: ${elementalImmunityText(frogColor)}", color = Color(0xFFBFD8FF), fontSize = 11.sp, modifier = Modifier.padding(5.dp))
 
         Card(Modifier.fillMaxWidth().padding(12.dp), colors = CardDefaults.cardColors(containerColor = Brown)) {
             Column(Modifier.padding(12.dp)) {
-                Text("TIER 1 • FEED THE FROG BUGS", color = Gold, fontWeight = FontWeight.Black)
-                Text("Enemies gain +1 STR, +1 DEX, and +1 CON for each tier above Tier 1.", color = Cream, fontSize = 11.sp, modifier = Modifier.padding(bottom = 8.dp))
+                Text("MONSTER TIER RULES", color = Gold, fontWeight = FontWeight.Black)
+                Text("Tier bands are 10 floors. Current difficulty ×${"%.3f".format(difficulty)}.", color = Cream, fontSize = 11.sp)
+                Text("Each tier adds +1 STR, +1 DEX, and +1 CON to enemies.", color = Cream, fontSize = 11.sp)
+                Text(
+                    if (transition) "Mid-band transition active: next-tier enemies may begin appearing." else "Next-tier enemy transition begins at floor ${((highestDungeonFloor - 1) / 10) * 10 + 6}.",
+                    color = Color(0xFFC9B99F),
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text("TIER 1 • FEED THE FROG BUGS", color = Gold, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 4.dp))
                 tierOneBugEnemies.forEach { enemy ->
                     val enemyStats = enemy.statsForTier(tier)
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(enemy.icon, fontSize = 24.sp, modifier = Modifier.padding(end = 8.dp))
-                        Text(enemy.name, color = Cream, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Column(Modifier.weight(1f)) {
+                            Text(enemy.name, color = Cream, fontWeight = FontWeight.Bold)
+                            enemy.elementalAttack?.let { element ->
+                                Text("${element.name.lowercase().replaceFirstChar { it.uppercase() }} attack", color = Color(0xFFDBB576), fontSize = 9.sp)
+                            }
+                        }
                         Text("${enemyStats.strength}/${enemyStats.dexterity}/${enemyStats.constitution}", color = Gold, fontSize = 11.sp)
                     }
                 }
@@ -544,11 +597,18 @@ fun DungeonScreen(
             }
         }
 
-        Text("Development controls", color = Color.Gray, fontSize = 10.sp)
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Button(onClick = onLevelUp) { Text("Level Up") }
-            Button(onClick = onAdvanceFloor) { Text("Next Floor") }
+        Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2119))) {
+            Column(Modifier.padding(10.dp)) {
+                Text("LOOT XP", color = Gold, fontWeight = FontWeight.Black)
+                Text("Recovered Tier $tier loot is worth $tier XP. XP is split into whole equal shares among the player and $helperCount active helpers; any remainder goes to the player.", color = Cream, fontSize = 10.sp)
+                Button(onClick = { onRecoverLoot(tier) }, modifier = Modifier.padding(top = 7.dp)) {
+                    Text("Test Recover Tier $tier Loot (+$tier XP)")
+                }
+            }
         }
+
+        Text("Development controls", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(top = 9.dp))
+        Button(onClick = onAdvanceFloor) { Text("Next Floor") }
         TextButton(onClick = onCharacterDeath) {
             Text("Test Character Death / Create New Frog", color = Color(0xFFE58C82), fontSize = 11.sp)
         }
