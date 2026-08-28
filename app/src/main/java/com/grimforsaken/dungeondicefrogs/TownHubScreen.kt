@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -39,15 +38,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.random.Random
 
 enum class ShopKind { BLACKSMITH, ITEM_SHOP, APOTHECARY, TAVERN }
 
 data class HiredHelper(
     val role: String,
-    val strength: Int,
-    val dexterity: Int,
-    val constitution: Int
+    val color: FrogColor,
+    var strength: Int,
+    var dexterity: Int,
+    var constitution: Int,
+    var xp: Int = 0,
+    var level: Int = 1,
+    var unspentStatPoints: Int = 0
 )
 
 data class TownShop(
@@ -134,10 +136,10 @@ fun TownHubScreen(
                         x in 3..5 || y in 4..7 -> TownStone
                         else -> TownGrass
                     }
-                    val p = isoOffset(originX, originY, x, y, stepX, stepY)
+                    val position = isoOffset(originX, originY, x, y, stepX, stepY)
                     Box(
                         Modifier
-                            .offset(p.first, p.second)
+                            .offset(position.first, position.second)
                             .size(tileSize)
                             .graphicsLayer { rotationZ = 45f; scaleY = 0.52f }
                             .background(tileColor, RoundedCornerShape(4.dp))
@@ -151,8 +153,8 @@ fun TownHubScreen(
             }
 
             shops.forEach { shop ->
-                val p = isoOffset(originX, originY, shop.tileX, shop.tileY, stepX, stepY)
-                TownBuilding(shop, Modifier.offset(p.first - 31.dp, p.second - 49.dp))
+                val position = isoOffset(originX, originY, shop.tileX, shop.tileY, stepX, stepY)
+                TownBuilding(shop, Modifier.offset(position.first - 31.dp, position.second - 49.dp))
             }
 
             val fountain = isoOffset(originX, originY, 4, 5, stepX, stepY)
@@ -192,10 +194,21 @@ fun TownHubScreen(
                             onNotice("You can hire a maximum of two helpers.")
                             return@ShopDialog
                         }
-                        val helper = HiredHelper(offer.helperRole, roll3d6(), roll3d6(), roll3d6())
+                        val color = randomFrogColor()
+                        val rolled = rollCharacterStats()
+                        val helper = HiredHelper(
+                            role = offer.helperRole,
+                            color = color,
+                            strength = rolled.strength,
+                            dexterity = rolled.dexterity,
+                            constitution = rolled.constitution
+                        )
                         helpers.add(helper)
                         onCoinsChange(coins - 1)
-                        onNotice("Hired ${helper.role}: STR ${helper.strength}, DEX ${helper.dexterity}, CON ${helper.constitution}.")
+                        onNotice(
+                            "Hired ${color.displayName} ${helper.role}: STR ${helper.strength}, DEX ${helper.dexterity}, CON ${helper.constitution}. " +
+                                "Immune to ${elementalImmunityText(color)}."
+                        )
                     } else {
                         val id = offer.inventoryId ?: return@ShopDialog
                         val capacity = 6 + townThresholdBonus(stats.strength) + if (inventory.contains("backpack")) 4 else 0
@@ -259,7 +272,7 @@ private fun ShopDialog(
                 Text("Coins: $coins", color = Color(0xFF8A6500), fontWeight = FontWeight.Black, modifier = Modifier.padding(bottom = 8.dp))
                 if (shop.kind == ShopKind.TAVERN && highestDungeonFloor < 30) {
                     Text(
-                        "Hired help unlocks at Dungeon Floor 30. Maximum: 2 helpers.",
+                        "Hired help unlocks at Dungeon Floor 30. Maximum: 2 helpers. Helper color is random and stats are 3d6.",
                         color = Color(0xFF9A5B38),
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 10.dp)
@@ -303,8 +316,6 @@ private fun townThresholdBonus(stat: Int) = when {
     else -> 0
 }
 
-private fun roll3d6(): Int = (1..3).sumOf { Random.nextInt(1, 7) }
-
 private fun townShops() = listOf(
     TownShop(ShopKind.BLACKSMITH, "BLACKSMITH", "Weapons & Armor", "⚒", 1, 3, 2, 4),
     TownShop(ShopKind.ITEM_SHOP, "ITEM SHOP", "Items", "🎒", 5, 1, 5, 2),
@@ -335,8 +346,8 @@ private fun shopOffers(kind: ShopKind): List<ShopOffer> = when (kind) {
         ShopOffer("health_potion", "Health Potion", "Health-restoring potion for development testing.", "❤️", "health_potion")
     )
     ShopKind.TAVERN -> listOf(
-        ShopOffer("fighter_helper", "Fighter Helper", "Stats are rolled 3d6 when hired.", "🐸", helperRole = "Fighter Helper"),
-        ShopOffer("scout_helper", "Scout Helper", "Stats are rolled 3d6 when hired.", "🐸", helperRole = "Scout Helper"),
-        ShopOffer("guard_helper", "Guard Helper", "Stats are rolled 3d6 when hired.", "🐸", helperRole = "Guard Helper")
+        ShopOffer("fighter_helper", "Fighter Helper", "Random frog color and 3d6 stats when hired.", "🐸", helperRole = "Fighter Helper"),
+        ShopOffer("scout_helper", "Scout Helper", "Random frog color and 3d6 stats when hired.", "🐸", helperRole = "Scout Helper"),
+        ShopOffer("guard_helper", "Guard Helper", "Random frog color and 3d6 stats when hired.", "🐸", helperRole = "Guard Helper")
     )
 }
