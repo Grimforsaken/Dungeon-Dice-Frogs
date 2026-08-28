@@ -1,10 +1,19 @@
 {
-  "version": 4,
+  "version": 5,
   "status": "preproduction-balance-baseline",
   "character": {
+    "creationOrder": ["choose-frog-color", "roll-strength-3d6", "roll-dexterity-3d6", "roll-constitution-3d6"],
+    "newCharacterAfterDeath": true,
     "statRoll": "3d6",
+    "statRerolls": false,
     "statRange": {"min": 3, "max": 18},
     "stats": ["strength", "dexterity", "constitution"],
+    "frogColors": {
+      "red": {"immuneElement": "fire", "immunityIncludesStatus": true},
+      "blue": {"immuneElement": "ice", "immunityIncludesStatus": true},
+      "yellow": {"immuneElement": "lightning", "immunityIncludesStatus": true},
+      "green": {"immuneElement": "poison", "immunityIncludesStatus": true}
+    },
     "thresholdBonuses": {"12": 1, "14": 2, "16": 3, "18": 4},
     "constitution": {
       "bonusHpByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4},
@@ -12,11 +21,24 @@
     },
     "strength": {"bonusCarrySlotsByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4}},
     "dexterity": {"bonusMovementSquaresByThreshold": {"12": 1, "14": 2, "16": 3, "18": 4}},
-    "leveling": {"xpPerLevelStep": 10, "level2TotalXp": 10, "killsGrantXp": false, "fractionalXp": false}
+    "leveling": {
+      "xpPerLevelStep": 10,
+      "level1TotalXp": 0,
+      "level2TotalXp": 10,
+      "level3TotalXp": 20,
+      "killsGrantXp": false,
+      "xpSource": "recovered-loot-and-treasure",
+      "fractionalXp": false,
+      "statPointsPerLevelGained": 2
+    }
   },
   "party": {
     "helpersUnlockDungeonFloor": 30,
     "maxHelpers": 2,
+    "helperColorSelection": "random-among-player-frog-colors",
+    "helperStatRoll": "3d6-each-stat",
+    "helpersUseSameXpLeveling": true,
+    "helpersEarnStatPointsPerLevel": 2,
     "movementUsesLowestPartyDexterity": true,
     "xpSplit": {"method": "equal-whole-shares", "remainderRecipient": "player"}
   },
@@ -25,7 +47,7 @@
     "ordinaryChestMimicChancePercent": 5,
     "lootTierFloorSpan": 10,
     "xpPerLootTier": "one-for-one",
-    "examples": {"tier1": 1, "tier2": 2, "tier3": 3},
+    "examples": {"tier1": 1, "tier2": 2, "tier3": 3, "tier4": 4},
     "nextTierEnemyIntroductionStartsAtBandMidpoint": true,
     "boss": {
       "uniqueLootGuaranteed": true,
@@ -35,9 +57,22 @@
     }
   },
   "enemies": {
+    "tierFloorSpan": 10,
+    "tierExamplesByFloor": {"tier1": "1-10", "tier2": "11-20", "tier3": "21-30", "tier4": "31-40"},
+    "nextTierIntroductionStartsAtFloorWithinBand": 6,
     "difficultyMultiplierPerTier": 1.5,
     "difficultyScaling": "cumulative",
-    "tierExamples": {"tier1": 1.0, "tier2": 1.5, "tier3": 2.25, "tier4": 3.375}
+    "tierExamples": {"tier1": 1.0, "tier2": 1.5, "tier3": 2.25, "tier4": 3.375},
+    "statIncreaseEachTierAfterTier1": {"strength": 1, "dexterity": 1, "constitution": 1},
+    "tier1Roster": [
+      {"id": "fly", "name": "Fly"},
+      {"id": "mosquito", "name": "Mosquito"},
+      {"id": "butterfly", "name": "Butterfly"},
+      {"id": "bee", "name": "Bee"},
+      {"id": "dragonfly", "name": "Dragonfly"},
+      {"id": "poison_fly", "name": "Poison Fly", "elementalAttack": "poison"},
+      {"id": "firefly", "name": "Firefly", "elementalAttack": "fire", "note": "Uses actual fire."}
+    ]
   },
   "inventory": {
     "capacityUnit": "slots",
@@ -132,6 +167,9 @@
     }
   },
   "town": {
+    "noTurns": true,
+    "enterButtonAppearsAtShopDoor": true,
+    "developmentShopPriceCoins": 1,
     "sellsBasicEquipment": true,
     "sellsSimpleNonEnchantedStarterWeapons": true,
     "enchantedWeaponsRoutineTownPurchase": false,
