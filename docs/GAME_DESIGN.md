@@ -6,6 +6,27 @@ Enter dungeon → explore → fight when necessary → recover loot/treasure →
 
 Enemy kills themselves award **0 XP**. Progression is tied to valuables recovered from the dungeon.
 
+## Character creation and death
+
+A new player character is created at the beginning of the game and whenever the previous player character dies.
+
+Creation order:
+
+1. Choose a frog color.
+2. Roll **3d6** for STR.
+3. Roll **3d6** for DEX.
+4. Roll **3d6** for CON.
+5. Begin at Level 1 with 0 XP.
+
+The four player frog colors provide complete immunity to the matching elemental damage and its associated status effect:
+
+- **Red** — Fire immunity, including Burning.
+- **Blue** — Ice immunity and its attack-stopping effect.
+- **Yellow** — Lightning immunity, including Lightning stun/turn loss.
+- **Green** — Poison immunity and Poison damage-over-time.
+
+Starting stats are the rolled 3d6 results. Character creation does not include a free reroll.
+
 ## XP and leveling
 
 Character levels use small whole-number XP totals.
@@ -16,6 +37,8 @@ Character levels use small whole-number XP totals.
 - Level 4: 30 total XP
 - Continue at +10 total XP per level.
 
+Every time a character reaches the next level, that character receives **2 stat points**. Each point can be applied to STR, DEX, or CON.
+
 Loot awards XP **one-for-one with its loot tier**:
 
 - Tier 1 loot = 1 XP
@@ -23,6 +46,8 @@ Loot awards XP **one-for-one with its loot tier**:
 - Tier 3 loot = 3 XP
 - Tier 4 loot = 4 XP
 - Continue the same pattern for higher tiers.
+
+Enemy kills award **0 XP**. XP is awarded when qualifying loot/treasure is recovered.
 
 ### Party XP split
 
@@ -35,7 +60,7 @@ Examples:
 - Player + 2 helpers, 4 XP → player 2 / helpers 1, 1
 - Player + 2 helpers, 8 XP → player 4 / helpers 2, 2
 
-No fractional XP is used.
+No fractional XP is used. Helpers use the same level thresholds and receive **2 stat points** each time they level.
 
 ## Loot
 
@@ -63,9 +88,9 @@ The guarded boss chest uses loot appropriate to that floor's tier.
 - Boss-guarded chests are never Mimics.
 - Mimics are enemies and therefore award no XP for the kill itself; their recovered loot can still award XP.
 
-## Loot tiers and dungeon floors
+## Monster tiers and dungeon floors
 
-Loot tiers advance every 10 dungeon floors.
+Monster/loot tiers advance every 10 dungeon floors.
 
 - Tier 1: floors 1–10
 - Tier 2: floors 11–20
@@ -73,7 +98,7 @@ Loot tiers advance every 10 dungeon floors.
 - Tier 4: floors 31–40
 - Continue in 10-floor bands.
 
-Starting around the midpoint of each 10-floor band, encounters increasingly include enemies associated with the next tier.
+Starting at the midpoint of each band — floors **6, 16, 26, 36, ...** — encounters may increasingly include enemies associated with the next tier.
 
 Enemy difficulty scales by a cumulative **×1.5 per tier** relative to the previous tier:
 
@@ -82,9 +107,31 @@ Enemy difficulty scales by a cumulative **×1.5 per tier** relative to the previ
 - Tier 3: ×2.25
 - Tier 4: ×3.375
 
+In addition, every tier after Tier 1 adds:
+
+- **+1 STR**
+- **+1 DEX**
+- **+1 CON**
+
+These stat increases stack by tier. The cumulative ×1.5 rule remains the overall difficulty scaling rule for the systems that use the tier multiplier.
+
+### Tier 1 monsters — Feed the Frog bugs
+
+Tier 1 is based on the seven Feed the Frog bugs:
+
+1. Fly
+2. Mosquito
+3. Butterfly
+4. Bee
+5. Dragonfly
+6. **Poison Fly** — uses Poison elemental attacks.
+7. **Firefly** — uses actual Fire attacks.
+
+A Green Frog is immune to the Poison Fly's Poison effect. A Red Frog is immune to the Firefly's Fire effect.
+
 Helpers unlock at **dungeon floor 30**.
 
-## Character creation
+## Character stats
 
 Every current character stat is rolled on **3d6**, producing a 3–18 range. The same rule applies to the player and hired helpers.
 
@@ -157,19 +204,20 @@ Movement modifiers include:
 
 ## Town
 
-The player may leave the dungeon and return to town.
+Town uses free movement and has **no turn system**. When the player stands on the interaction tile in front of a shop door, an **Enter** button appears and opens that shop's menu.
 
-Without special travel, the party must physically traverse all intervening dungeon floors to reach the entrance.
+Current development shops:
 
-Town can sell:
+- Blacksmith — weapons and armor
+- Item Shop — items
+- Apothecary — healing and health potions
+- Tavern — hired help
 
-- Basic equipment
-- Simple non-enchanted starter weapons
-- Basic utility/consumable items
-- Backpacks (+4 carry slots)
-- Scrolls of Return, subject to economy balancing
+Development shop items/hiring cost **1 coin**.
 
-Enchanted weapons are intended primarily as dungeon rewards rather than routine town purchases.
+The player may leave the dungeon and return to town. Without special travel, the party must physically traverse all intervening dungeon floors to reach the entrance.
+
+Town can sell basic equipment, simple non-enchanted starter weapons, utility items, backpacks, and Scrolls of Return. Enchanted weapons are intended primarily as dungeon rewards rather than routine town purchases.
 
 ## Scroll of Return
 
@@ -187,7 +235,11 @@ When used:
 
 - Unavailable until dungeon floor 30.
 - The player may hire up to two helpers.
-- Helpers have their own rolled stats, HP, equipment, level, and XP.
+- A hired helper's frog color is selected randomly from Red, Blue, Yellow, and Green.
+- The helper receives the matching elemental immunity.
+- STR, DEX, and CON are each rolled on 3d6 when the helper is hired.
+- Helpers have their own HP, equipment, level, XP, and unspent stat points.
+- Helpers use the same +10-XP-per-level progression and receive 2 stat points on each level gained.
 - XP is split using the whole-number equal-share rule above.
 - Party movement is limited by the lowest DEX in the party.
 
