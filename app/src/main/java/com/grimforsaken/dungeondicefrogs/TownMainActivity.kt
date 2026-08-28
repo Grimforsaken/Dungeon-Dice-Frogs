@@ -36,7 +36,17 @@ class TownMainActivity : ComponentActivity() {
 @Composable
 fun DungeonDiceFrogsTownApp() {
     MaterialTheme {
-        val stats = remember { HeroStats() }
+        var hero by remember { mutableStateOf<HeroCharacter?>(null) }
+
+        if (hero == null) {
+            Surface(Modifier.background(Color(0xFF17100B))) {
+                CharacterCreationScreen { created -> hero = created }
+            }
+            return@MaterialTheme
+        }
+
+        val activeHero = hero!!
+        val stats = activeHero.stats
         var screenName by rememberSaveable { mutableStateOf(Screen.TOWN.name) }
         val screen = Screen.valueOf(screenName)
         var notice by remember { mutableStateOf("") }
@@ -57,6 +67,7 @@ fun DungeonDiceFrogsTownApp() {
                 when (screen) {
                     Screen.TOWN -> TownHubScreen(
                         stats = stats,
+                        frogColor = activeHero.color,
                         inventory = inventory,
                         coins = coins,
                         onCoinsChange = { coins = it },
