@@ -1,7 +1,7 @@
 from pathlib import Path
 
-p = Path('app/src/main/java/com/grimforsaken/dungeondicefrogs/MainActivity.kt')
-s = p.read_text()
+main = Path('app/src/main/java/com/grimforsaken/dungeondicefrogs/MainActivity.kt')
+s = main.read_text()
 
 if 'import androidx.compose.foundation.layout.BoxScope' not in s:
     s = s.replace('import androidx.compose.foundation.layout.Box\n', 'import androidx.compose.foundation.layout.Box\nimport androidx.compose.foundation.layout.BoxScope\n')
@@ -25,6 +25,13 @@ s = s.replace(
     'onDrag = { change, amount -> change.consume(); onMove(amount) },',
     'onDrag = { _, amount -> onMove(amount) },'
 )
+main.write_text(s)
 
-p.write_text(s)
+# Compose exposes RowScope.weight as a scope extension; importing the internal symbol
+# directly breaks compilation on the Compose version used by this project.
+town = Path('app/src/main/java/com/grimforsaken/dungeondicefrogs/TownHubScreen.kt')
+if town.exists():
+    t = town.read_text().replace('import androidx.compose.foundation.layout.weight\n', '')
+    town.write_text(t)
+
 print('Dungeon Dice Frogs source preflight applied')
