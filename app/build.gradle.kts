@@ -11,8 +11,8 @@ android {
         applicationId = "com.grimforsaken.dungeondicefrogs"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0-town-equipment"
+        versionCode = 2
+        versionName = "0.2.0-interactive-town-shops"
     }
 
     buildFeatures { compose = true }
