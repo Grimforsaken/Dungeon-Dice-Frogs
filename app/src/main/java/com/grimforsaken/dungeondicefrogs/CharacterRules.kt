@@ -1,5 +1,6 @@
 package com.grimforsaken.dungeondicefrogs
 
+import kotlin.math.pow
 import kotlin.random.Random
 
 enum class ElementType {
@@ -28,6 +29,7 @@ data class EnemyTemplate(
     val tierOneStats: HeroStats,
     val elementalAttack: ElementType? = null
 ) {
+    /** Every tier after Tier 1 adds +1 to every enemy stat. */
     fun statsForTier(tier: Int): HeroStats {
         val bonus = tier.coerceAtLeast(1) - 1
         return HeroStats(
@@ -46,7 +48,7 @@ fun rollCharacterStats(): HeroStats = HeroStats(
     constitution = roll3d6Stat()
 )
 
-fun randomFrogColor(): FrogColor = FrogColor.entries.random()
+fun randomFrogColor(): FrogColor = FrogColor.values().random()
 
 fun frogColorEmoji(color: FrogColor): String = when (color) {
     FrogColor.RED -> "🔴🐸"
@@ -62,16 +64,42 @@ fun elementalImmunityText(color: FrogColor): String = when (color) {
     FrogColor.GREEN -> "Poison damage"
 }
 
-/**
- * Elemental resolution entry point for combat. A matching frog color receives
- * neither the elemental damage nor the related status effect.
- */
+/** Matching frog colors take no damage and no status from that element. */
 data class ElementResolution(val damage: Int, val statusApplies: Boolean, val immune: Boolean)
 
 fun resolveElementAgainstFrog(color: FrogColor, element: ElementType, damage: Int): ElementResolution {
     if (color.isImmuneTo(element)) return ElementResolution(0, false, true)
     return ElementResolution(damage.coerceAtLeast(0), true, false)
 }
+
+// ----- Established character leveling -----
+
+/** Level 1 = 0 XP, Level 2 = 10 XP, Level 3 = 20 XP, and so on. */
+fun levelForXp(totalXp: Int): Int = 1 + totalXp.coerceAtLeast(0) / 10
+
+fun xpRequiredForLevel(level: Int): Int = (level.coerceAtLeast(1) - 1) * 10
+
+fun xpRequiredForNextLevel(totalXp: Int): Int = xpRequiredForLevel(levelForXp(totalXp) + 1)
+
+/** Loot XP is one-for-one with loot tier. Enemy kills themselves grant 0 XP. */
+fun xpForRecoveredLootTier(lootTier: Int): Int = lootTier.coerceAtLeast(1)
+
+fun statPointsEarnedForLevelIncrease(oldLevel: Int, newLevel: Int): Int =
+    ((newLevel - oldLevel).coerceAtLeast(0)) * 2
+
+// ----- Established dungeon / monster tier rules -----
+
+/** Tier 1 = floors 1-10, Tier 2 = 11-20, etc. */
+fun tierForDungeonFloor(floor: Int): Int = ((floor.coerceAtLeast(1) - 1) / 10) + 1
+
+/** Current design begins introducing the next tier halfway through a 10-floor band: floor 6, 16, 26, etc. */
+fun nextTierEnemiesCanAppear(floor: Int): Boolean {
+    val bandPosition = ((floor.coerceAtLeast(1) - 1) % 10) + 1
+    return bandPosition >= 6
+}
+
+/** Cumulative difficulty multiplier: 1.0, 1.5, 2.25, 3.375 ... */
+fun enemyDifficultyMultiplier(tier: Int): Double = 1.5.pow((tier.coerceAtLeast(1) - 1).toDouble())
 
 /** Tier 1 enemy roster: the seven Feed the Frog bugs. */
 val tierOneBugEnemies: List<EnemyTemplate> = listOf(
