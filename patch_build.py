@@ -8,15 +8,15 @@ ROOT = Path('.')
 JAVA = ROOT / 'app/src/main/java/com/grimforsaken/dungeondicefrogs'
 DRAWABLE = ROOT / 'app/src/main/res/drawable-nodpi'
 ASSETS = ROOT / 'assets'
-ART_PACK = ASSETS / 'ddf_art_pack_v033.zip'
+ART_PACK = ASSETS / 'ddf_art_pack_mini_v033.zip'
 
-# Reconstruct the binary art pack from repository-safe base64 chunks when needed.
-if not ART_PACK.exists():
-    parts = sorted(ASSETS.glob('ddf_art_pack_v033.b64.part*'))
-    if not parts:
-        raise RuntimeError('Missing Dungeon Dice Frogs art pack and art-pack chunks')
-    encoded = ''.join(part.read_text().strip() for part in parts)
-    ART_PACK.write_bytes(base64.b64decode(encoded, validate=True))
+# Reconstruct the validated mobile art bundle from small repository-safe chunks.
+# The older ddf_art_pack_v033.b64.part* test chunks are deliberately ignored.
+parts = sorted(ASSETS.glob('ddf_art_pack_mini_v033.b64.chunk*'))
+if not parts:
+    raise RuntimeError('Missing verified Dungeon Dice Frogs mini art-pack chunks')
+encoded = ''.join(part.read_text().strip() for part in parts)
+ART_PACK.write_bytes(base64.b64decode(encoded, validate=True))
 
 DRAWABLE.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(ART_PACK, 'r') as z:
@@ -92,14 +92,20 @@ town = JAVA / 'TownHubScreen.kt'
 if town.exists():
     town.write_text(town.read_text().replace('import androidx.compose.foundation.layout.weight\n', ''))
 
-# Keep generator/data persistence, but retire the old room-to-room UI in favor of DungeonSquareScreen.kt.
+# Keep generator/data persistence, but retire its old room-to-room UI.
 dungeon = JAVA / 'ProceduralDungeon.kt'
 if dungeon.exists():
     d = dungeon.read_text().replace('import androidx.compose.foundation.layout.weight\n', '')
     d = d.replace('@Composable fun PersistentDungeonScreen(', '@Composable fun LegacyPersistentDungeonScreen(', 1)
     dungeon.write_text(d)
 
-# Use the actual persistent main frog in Town and make the tower entrance switch to Dungeon.
+# The compact Greystone atlases use 32-pixel source cells.
+square = JAVA / 'DungeonSquareScreen.kt'
+if square.exists():
+    q = square.read_text().replace('val sourceSize = 160', 'val sourceSize = 32')
+    square.write_text(q)
+
+# Use the persistent main frog in Town and let the tower entrance switch to Dungeon.
 game = JAVA / 'GameActivity.kt'
 if game.exists():
     g = game.read_text()
@@ -109,4 +115,4 @@ if game.exists():
         raise RuntimeError('Could not patch TownHubScreen call in GameActivity.kt')
     game.write_text(g.replace(old, new, 1))
 
-print(f'Preflight OK: verified and installed {len(expected)} WebP art assets.')
+print(f'Preflight OK: reconstructed and verified {len(expected)} supplied WebP art assets.')
