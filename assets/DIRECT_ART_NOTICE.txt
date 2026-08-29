@@ -1,0 +1,1 @@
+All supplied game artwork for this update is bundled as Android WebP drawable resources, including home navigation, town, frogs, dungeon Greystone assets, base bugs, and the six uploaded regular/elite bug enemies.
