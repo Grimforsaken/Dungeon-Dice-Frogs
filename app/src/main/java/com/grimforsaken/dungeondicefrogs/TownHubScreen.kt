@@ -1,5 +1,6 @@
 package com.grimforsaken.dungeondicefrogs
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,10 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -74,9 +75,7 @@ data class ShopOffer(
 
 private val TownGold = Color(0xFFFFC62D)
 private val TownCream = Color(0xFFFFE9B4)
-private val TownGrass = Color(0xFF4F8F45)
-private val TownStone = Color(0xFFA69A86)
-private val TownSky = Color(0xFF7FC3E8)
+private val TownSky = Color(0xFF274F55)
 
 @Composable
 fun TownHubScreen(
@@ -90,14 +89,14 @@ fun TownHubScreen(
 ) {
     val shops = remember { townShops() }
     var playerX by rememberSaveable { mutableStateOf(4) }
-    var playerY by rememberSaveable { mutableStateOf(6) }
+    var playerY by rememberSaveable { mutableStateOf(9) }
     var openShopName by rememberSaveable { mutableStateOf<String?>(null) }
     val standingShop = shops.firstOrNull { it.doorX == playerX && it.doorY == playerY }
     val openShop = openShopName?.let { saved -> shops.firstOrNull { it.kind.name == saved } }
 
     Box(Modifier.fillMaxSize().background(TownSky).padding(bottom = 78.dp)) {
         Column(
-            Modifier.fillMaxWidth().background(Color(0xCC24170F)).padding(horizontal = 14.dp, vertical = 9.dp)
+            Modifier.fillMaxWidth().background(Color(0xDD24170F)).padding(horizontal = 14.dp, vertical = 9.dp)
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("DUNGEON DICE FROGS", color = TownGold, fontWeight = FontWeight.Black, fontSize = 19.sp)
@@ -107,43 +106,74 @@ fun TownHubScreen(
         }
 
         BoxWithConstraints(Modifier.fillMaxSize().padding(top = 55.dp)) {
-            val tileSize = 39.dp
-            val stepX = 20.dp
-            val stepY = 11.dp
-            val originX = maxWidth / 2f - tileSize / 2f
-            val originY = 92.dp
-            val blockedTiles = shops.map { it.tileX to it.tileY }.toSet()
+            val mapSize = maxWidth
+            val mapTop = ((maxHeight - mapSize) / 2f).coerceAtLeast(0.dp)
+            val tileWidth = mapSize / 9f
+            val tileHeight = mapSize / 10f
             val doorTiles = shops.map { it.doorX to it.doorY }.toSet()
+            val blockedTiles = townBlockedTiles()
 
-            Card(
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 1.dp).size(92.dp, 80.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF302F38)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Text("♜", color = Color(0xFFE14A35), fontSize = 34.sp)
-                    Text("TOWER DUNGEON", color = TownCream, fontWeight = FontWeight.Black, fontSize = 8.sp)
-                }
-            }
+            Image(
+                painter = painterResource(R.drawable.town_map),
+                contentDescription = "Town map",
+                modifier = Modifier
+                    .offset(y = mapTop)
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                contentScale = ContentScale.FillBounds
+            )
 
+            TownArtLayer(
+                drawable = R.drawable.town_item_shop,
+                description = "Item Shop",
+                modifier = Modifier
+                    .offset(x = mapSize * 0.045f, y = mapTop + mapSize * 0.135f)
+                    .size(mapSize * 0.34f)
+            )
+            TownArtLayer(
+                drawable = R.drawable.town_blacksmith,
+                description = "Blacksmith",
+                modifier = Modifier
+                    .offset(x = mapSize * 0.615f, y = mapTop + mapSize * 0.135f)
+                    .size(mapSize * 0.34f)
+            )
+            TownArtLayer(
+                drawable = R.drawable.town_apothecary,
+                description = "Apothecary",
+                modifier = Modifier
+                    .offset(x = mapSize * 0.055f, y = mapTop + mapSize * 0.595f)
+                    .size(mapSize * 0.31f)
+            )
+            TownArtLayer(
+                drawable = R.drawable.town_tavern,
+                description = "Tavern",
+                modifier = Modifier
+                    .offset(x = mapSize * 0.645f, y = mapTop + mapSize * 0.605f)
+                    .size(mapSize * 0.30f)
+            )
+            TownArtLayer(
+                drawable = R.drawable.town_fountain,
+                description = "Frog fountain",
+                modifier = Modifier
+                    .offset(x = mapSize * 0.39f, y = mapTop + mapSize * 0.405f)
+                    .size(mapSize * 0.22f)
+            )
+
+            // The visible map is the artwork. This light grid is the actual movement layer.
             for (y in 0..9) {
                 for (x in 0..8) {
-                    val pair = x to y
-                    val blocked = pair in blockedTiles
-                    val door = pair in doorTiles
-                    val tileColor = when {
-                        door -> Color(0xFFD4B25B)
-                        x in 3..5 || y in 4..7 -> TownStone
-                        else -> TownGrass
-                    }
-                    val position = isoOffset(originX, originY, x, y, stepX, stepY)
+                    val tile = x to y
+                    val blocked = tile in blockedTiles
+                    val door = tile in doorTiles
                     Box(
                         Modifier
-                            .offset(position.first, position.second)
-                            .size(tileSize)
-                            .graphicsLayer { rotationZ = 45f; scaleY = 0.52f }
-                            .background(tileColor, RoundedCornerShape(4.dp))
-                            .border(1.dp, Color(0x88685E50), RoundedCornerShape(4.dp))
+                            .offset(x = tileWidth * x.toFloat(), y = mapTop + tileHeight * y.toFloat())
+                            .size(tileWidth, tileHeight)
+                            .background(if (door) Color(0x22FFD54F) else Color.Transparent)
+                            .border(
+                                width = if (door) 1.dp else 0.35.dp,
+                                color = if (door) Color(0x99FFD54F) else Color(0x22FFFFFF)
+                            )
                             .clickable(enabled = !blocked) {
                                 playerX = x
                                 playerY = y
@@ -152,16 +182,26 @@ fun TownHubScreen(
                 }
             }
 
-            shops.forEach { shop ->
-                val position = isoOffset(originX, originY, shop.tileX, shop.tileY, stepX, stepY)
-                TownBuilding(shop, Modifier.offset(position.first - 31.dp, position.second - 49.dp))
+            val playerXOffset = tileWidth * playerX.toFloat() + tileWidth / 2f - 17.dp
+            val playerYOffset = mapTop + tileHeight * playerY.toFloat() + tileHeight / 2f - 23.dp
+            Text(
+                "🐸",
+                fontSize = 32.sp,
+                modifier = Modifier.offset(x = playerXOffset, y = playerYOffset)
+            )
+
+            Card(
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = mapTop + 3.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xAA24170F))
+            ) {
+                Text(
+                    "TOWER DUNGEON  ↑",
+                    color = TownCream,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 9.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
             }
-
-            val fountain = isoOffset(originX, originY, 4, 5, stepX, stepY)
-            Text("⛲", fontSize = 28.sp, modifier = Modifier.offset(fountain.first + 3.dp, fountain.second - 23.dp))
-
-            val player = isoOffset(originX, originY, playerX, playerY, stepX, stepY)
-            Text("🐸", fontSize = 31.sp, modifier = Modifier.offset(player.first + 4.dp, player.second - 22.dp))
 
             if (standingShop != null) {
                 Button(
@@ -226,27 +266,27 @@ fun TownHubScreen(
     }
 }
 
-private fun isoOffset(originX: Dp, originY: Dp, x: Int, y: Int, stepX: Dp, stepY: Dp): Pair<Dp, Dp> {
-    return (originX + stepX * (x - y).toFloat()) to (originY + stepY * (x + y).toFloat())
+@Composable
+private fun TownArtLayer(drawable: Int, description: String, modifier: Modifier) {
+    Image(
+        painter = painterResource(drawable),
+        contentDescription = description,
+        modifier = modifier,
+        contentScale = ContentScale.Fit
+    )
 }
 
-@Composable
-private fun TownBuilding(shop: TownShop, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.size(101.dp, 59.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF5B3521)),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            Modifier.fillMaxSize().padding(4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(shop.icon, fontSize = 20.sp)
-            Text(shop.title, color = TownGold, fontWeight = FontWeight.Black, fontSize = 9.sp, textAlign = TextAlign.Center)
-            Text(shop.subtitle, color = TownCream, fontSize = 7.sp, textAlign = TextAlign.Center)
-        }
-    }
+private fun townBlockedTiles(): Set<Pair<Int, Int>> = buildSet {
+    // Upper-left Item Shop footprint.
+    for (y in 1..2) for (x in 0..3) add(x to y)
+    // Upper-right Blacksmith footprint.
+    for (y in 1..2) for (x in 5..8) add(x to y)
+    // Lower-left Apothecary footprint.
+    for (y in 6..7) for (x in 0..3) add(x to y)
+    // Lower-right Tavern footprint.
+    for (y in 6..7) for (x in 5..8) add(x to y)
+    // Fountain center.
+    add(4 to 5)
 }
 
 @Composable
@@ -317,10 +357,10 @@ private fun townThresholdBonus(stat: Int) = when {
 }
 
 private fun townShops() = listOf(
-    TownShop(ShopKind.BLACKSMITH, "BLACKSMITH", "Weapons & Armor", "⚒", 1, 3, 2, 4),
-    TownShop(ShopKind.ITEM_SHOP, "ITEM SHOP", "Items", "🎒", 5, 1, 5, 2),
-    TownShop(ShopKind.APOTHECARY, "APOTHECARY", "Healing & Health Potions", "🧪", 3, 7, 4, 7),
-    TownShop(ShopKind.TAVERN, "TAVERN", "Hired Help", "🍺", 7, 5, 6, 5)
+    TownShop(ShopKind.ITEM_SHOP, "ITEM SHOP", "Items", "🎒", 2, 2, 2, 3),
+    TownShop(ShopKind.BLACKSMITH, "BLACKSMITH", "Weapons & Armor", "⚒", 6, 2, 6, 3),
+    TownShop(ShopKind.APOTHECARY, "APOTHECARY", "Healing & Health Potions", "🧪", 2, 7, 2, 8),
+    TownShop(ShopKind.TAVERN, "TAVERN", "Hired Help", "🍺", 6, 7, 6, 8)
 )
 
 private fun shopOffers(kind: ShopKind): List<ShopOffer> = when (kind) {
