@@ -44,26 +44,25 @@ class HomeActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(Modifier.fillMaxSize(), color = Color(0xFF0A120C)) {
                     DungeonDiceFrogsHome(
-                        onPlay = { launchGame(false) },
-                        onContinue = { launchGame(true) },
-                        onTown = { launchGame(true) },
+                        onPlay = { launchGame(Screen.DUNGEON) },
+                        onContinue = { launchGame(null) },
+                        onTown = { launchGame(Screen.TOWN) },
                         onShop = {
-                            Toast.makeText(this, "Walk to a shop door in Town and tap Enter.", Toast.LENGTH_SHORT).show()
-                            launchGame(true)
+                            Toast.makeText(this, "Opening Town. Walk to a shop door and tap Enter.", Toast.LENGTH_SHORT).show()
+                            launchGame(Screen.TOWN)
                         },
-                        onHeroes = {
-                            Toast.makeText(this, "Open the Hero tab to manage your frog and equipment.", Toast.LENGTH_SHORT).show()
-                            launchGame(true)
-                        }
+                        onHeroes = { launchGame(Screen.HERO) }
                     )
                 }
             }
         }
     }
 
-    private fun launchGame(continueExisting: Boolean) {
-        val gameIntent = Intent(this, MainActivity::class.java)
-        if (continueExisting) gameIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+    private fun launchGame(targetScreen: Screen?) {
+        val gameIntent = Intent(this, GameActivity::class.java)
+        if (targetScreen != null) {
+            gameIntent.putExtra(GameActivity.EXTRA_START_SCREEN, targetScreen.name)
+        }
         startActivity(gameIntent)
     }
 }
@@ -114,7 +113,12 @@ private fun DungeonDiceFrogsHome(
         AlertDialog(
             onDismissRequest = { showSettings = false },
             title = { Text("Settings") },
-            text = { Text("Dungeon Dice Frogs development build. More game settings will be added as their systems are implemented.") },
+            text = {
+                Text(
+                    "Your main frog is saved automatically and remains your character until it dies. " +
+                        "Dungeon floors and floor state are also persistent."
+                )
+            },
             confirmButton = {
                 TextButton(onClick = { showSettings = false }) { Text("Close") }
             }
