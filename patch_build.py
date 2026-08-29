@@ -25,6 +25,9 @@ s = s.replace(
     'onDrag = { change, amount -> change.consume(); onMove(amount) },',
     'onDrag = { _, amount -> onMove(amount) },'
 )
+# Route the Dungeon tab through the persistent floor generator instead of the
+# older development-only monster-list screen.
+s = s.replace('Screen.DUNGEON -> DungeonScreen(', 'Screen.DUNGEON -> PersistentDungeonScreen(')
 main.write_text(s)
 
 # Compose exposes RowScope.weight as a scope extension; importing the internal symbol
@@ -33,5 +36,15 @@ town = Path('app/src/main/java/com/grimforsaken/dungeondicefrogs/TownHubScreen.k
 if town.exists():
     t = town.read_text().replace('import androidx.compose.foundation.layout.weight\n', '')
     town.write_text(t)
+
+# Keep the procedural dungeon compatible with the project's Compose version and
+# the compact 40-pixel Greystone atlas cells packaged in drawable-nodpi.
+dungeon = Path('app/src/main/java/com/grimforsaken/dungeondicefrogs/ProceduralDungeon.kt')
+if dungeon.exists():
+    d = dungeon.read_text()
+    d = d.replace('import androidx.compose.foundation.layout.weight\n', '')
+    d = d.replace('val s=160', 'val s=40')
+    d = d.replace('val sourceSize = 160', 'val sourceSize = 40')
+    dungeon.write_text(d)
 
 print('Dungeon Dice Frogs source preflight applied')
