@@ -1,0 +1,1 @@
+Dungeon Dice Frogs 0.3.3 bundles the supplied game art directly in app/src/main/res/drawable-nodpi. The Android build validates those WebP resources in preflight. Do not replace them with placeholder or truncated image files.
