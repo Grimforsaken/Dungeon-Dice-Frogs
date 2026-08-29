@@ -1,5 +1,14 @@
 # Dungeon Dice Frogs — Development Roadmap
 
+## Next APK update queue
+
+Do not apply these changes to the current published APK yet. Apply them together with the next planned APK update.
+
+- **APK / launcher icon:** use the first newly supplied frog-with-sword-and-red-d20 image from the August 29 update. Source attachment in the design thread: `1000040542.png`.
+- **In-app icon / branding image:** use the second newly supplied frog-with-sword-and-red-d20 image from the August 29 update. Source attachment in the design thread: `1000040541.png`.
+- Preserve the artwork composition when preparing Android icon resources; create the required Android launcher/adaptive icon sizes without replacing the source artwork with a generic system icon.
+- Keep these queued until the next APK build so they can be applied alongside the next group of gameplay/UI changes rather than triggering a standalone release.
+
 ## Phase 1: Rules prototype
 
 - Implement deterministic dice utilities for d2, d3, d4, d6, d8, percentile rolls, and 3d6 stat generation.
