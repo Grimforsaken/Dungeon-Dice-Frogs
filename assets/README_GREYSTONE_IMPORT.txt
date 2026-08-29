@@ -1,0 +1,1 @@
+Tier 1 Greystone atlases are stored as Android drawable-nodpi WebP resources. Source pack supplied by project owner.
