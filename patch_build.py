@@ -1,4 +1,5 @@
 from pathlib import Path
+import base64
 import hashlib
 import json
 import zipfile
@@ -6,25 +7,28 @@ import zipfile
 ROOT = Path('.')
 JAVA = ROOT / 'app/src/main/java/com/grimforsaken/dungeondicefrogs'
 DRAWABLE = ROOT / 'app/src/main/res/drawable-nodpi'
-ART_PACK = ROOT / 'assets/ddf_art_pack_v033.zip'
+ASSETS = ROOT / 'assets'
+ART_PACK = ASSETS / 'ddf_art_pack_v033.zip'
 
-# ----- Install and verify the supplied game art before Android resource compilation. -----
+# Reconstruct the binary art pack from repository-safe base64 chunks when needed.
 if not ART_PACK.exists():
-    raise RuntimeError(f'Missing required art pack: {ART_PACK}')
-DRAWABLE.mkdir(parents=True, exist_ok=True)
+    parts = sorted(ASSETS.glob('ddf_art_pack_v033.b64.part*'))
+    if not parts:
+        raise RuntimeError('Missing Dungeon Dice Frogs art pack and art-pack chunks')
+    encoded = ''.join(part.read_text().strip() for part in parts)
+    ART_PACK.write_bytes(base64.b64decode(encoded, validate=True))
 
+DRAWABLE.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(ART_PACK, 'r') as z:
     manifest = json.loads(z.read('asset_manifest.json').decode('utf-8'))
     expected = set(manifest)
     if len(expected) < 30:
         raise RuntimeError(f'Art manifest unexpectedly small: {len(expected)} assets')
-
     for name, info in manifest.items():
         if not name.endswith('.webp'):
             raise RuntimeError(f'Unexpected drawable type in art pack: {name}')
         data = z.read(name)
-        digest = hashlib.sha256(data).hexdigest()
-        if digest != info['sha256']:
+        if hashlib.sha256(data).hexdigest() != info['sha256']:
             raise RuntimeError(f'Checksum mismatch for {name}')
         if len(data) != int(info['bytes']):
             raise RuntimeError(f'Size mismatch for {name}')
@@ -52,7 +56,7 @@ missing = sorted(required - expected)
 if missing:
     raise RuntimeError('Art pack is missing: ' + ', '.join(missing))
 
-# ----- Existing Compose compatibility repairs for the older development screen. -----
+# Existing Compose compatibility repairs for the older development activity.
 main = JAVA / 'MainActivity.kt'
 if main.exists():
     s = main.read_text()
@@ -88,20 +92,14 @@ town = JAVA / 'TownHubScreen.kt'
 if town.exists():
     town.write_text(town.read_text().replace('import androidx.compose.foundation.layout.weight\n', ''))
 
-# Keep the generator/data model but retire its old room-to-room UI. The new
-# PersistentDungeonScreen in DungeonSquareScreen.kt moves one 10x10 square at a time.
+# Keep generator/data persistence, but retire the old room-to-room UI in favor of DungeonSquareScreen.kt.
 dungeon = JAVA / 'ProceduralDungeon.kt'
 if dungeon.exists():
     d = dungeon.read_text().replace('import androidx.compose.foundation.layout.weight\n', '')
-    d = d.replace(
-        '@Composable fun PersistentDungeonScreen(',
-        '@Composable fun LegacyPersistentDungeonScreen(',
-        1
-    )
+    d = d.replace('@Composable fun PersistentDungeonScreen(', '@Composable fun LegacyPersistentDungeonScreen(', 1)
     dungeon.write_text(d)
 
-# Pass the actual persistent main-frog color into Town and let the tower entrance
-# switch directly to the dungeon without creating a new character.
+# Use the actual persistent main frog in Town and make the tower entrance switch to Dungeon.
 game = JAVA / 'GameActivity.kt'
 if game.exists():
     g = game.read_text()
@@ -109,7 +107,6 @@ if game.exists():
     new = '''                            helpers = helpers,\n                            highestDungeonFloor = highestDungeonFloor,\n                            frogColor = currentColor,\n                            onEnterDungeon = {\n                                screenName = Screen.DUNGEON.name\n                                PlayerCharacterRepository.saveWorldProgress(\n                                    context, coins, highestDungeonFloor, Screen.DUNGEON\n                                )\n                            },\n                            onNotice = { notice = it }\n                        )'''
     if old not in g:
         raise RuntimeError('Could not patch TownHubScreen call in GameActivity.kt')
-    g = g.replace(old, new, 1)
-    game.write_text(g)
+    game.write_text(g.replace(old, new, 1))
 
 print(f'Preflight OK: verified and installed {len(expected)} WebP art assets.')
