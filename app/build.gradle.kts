@@ -11,8 +11,8 @@ android {
         applicationId = "com.grimforsaken.dungeondicefrogs"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0-interactive-town-shops"
+        versionCode = 3
+        versionName = "0.3.0-persistent-procedural-dungeon"
     }
 
     buildFeatures { compose = true }
