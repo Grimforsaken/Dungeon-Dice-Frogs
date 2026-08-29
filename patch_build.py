@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 main = Path('app/src/main/java/com/grimforsaken/dungeondicefrogs/MainActivity.kt')
 s = main.read_text()
@@ -45,6 +46,39 @@ if dungeon.exists():
     d = d.replace('import androidx.compose.foundation.layout.weight\n', '')
     d = d.replace('val s=160', 'val s=40')
     d = d.replace('val sourceSize = 160', 'val sourceSize = 40')
+
+    room_types = '''    private fun types(
+        rooms: MutableList<DungeonRoomData>,
+        l: Array<MutableSet<Int>>,
+        s: DungeonCoord,
+        e: DungeonCoord,
+        r: Random
+    ) {
+        rooms.forEachIndexed { i, room ->
+            val c = co(i)
+            room.type = when {
+                c == s -> DungeonRoomType.STAIRS_DOWN
+                room.mergedGroup?.startsWith("boss-") == true -> DungeonRoomType.BOSS
+                c == e -> DungeonRoomType.STAIRS_UP
+                room.mergedGroup != null -> DungeonRoomType.OPEN
+                else -> {
+                    val ds = l[i].map { dir(c, co(it)) }
+                    val straight = ds.size == 2 && ds[0].opposite() == ds[1]
+                    when {
+                        straight && r.nextFloat() < .72f -> DungeonRoomType.HALLWAY
+                        ds.size in 2..3 && r.nextFloat() < .22f -> DungeonRoomType.HALLWAY
+                        r.nextFloat() < .10f -> DungeonRoomType.PILLAR
+                        r.nextFloat() < .12f -> DungeonRoomType.OPEN
+                        else -> DungeonRoomType.STANDARD
+                    }
+                }
+            }
+        }
+    }
+'''
+    d, count = re.subn(r'^    private fun types\([^\n]*\n', room_types, d, count=1, flags=re.MULTILINE)
+    if count != 1:
+        raise RuntimeError('Could not patch procedural room type function')
     dungeon.write_text(d)
 
 print('Dungeon Dice Frogs source preflight applied')
