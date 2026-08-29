@@ -11,8 +11,8 @@ android {
         applicationId = "com.grimforsaken.dungeondicefrogs"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0-persistent-procedural-dungeon"
+        versionCode = 4
+        versionName = "0.3.1-startup-fix-icons"
     }
 
     buildFeatures { compose = true }
