@@ -7,18 +7,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,13 +42,13 @@ class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                Surface(Modifier.fillMaxSize(), color = Color(0xFF0A120C)) {
+                Surface(Modifier.fillMaxSize(), color = Color(0xFF071009)) {
                     DungeonDiceFrogsHome(
                         onPlay = { launchGame(Screen.DUNGEON) },
                         onContinue = { launchGame(null) },
                         onTown = { launchGame(Screen.TOWN) },
                         onShop = {
-                            Toast.makeText(this, "Opening Town. Walk to a shop door and tap Enter.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Walk to a shop door in Town and tap Enter.", Toast.LENGTH_SHORT).show()
                             launchGame(Screen.TOWN)
                         },
                         onHeroes = { launchGame(Screen.HERO) }
@@ -60,9 +60,7 @@ class HomeActivity : ComponentActivity() {
 
     private fun launchGame(targetScreen: Screen?) {
         val gameIntent = Intent(this, GameActivity::class.java)
-        if (targetScreen != null) {
-            gameIntent.putExtra(GameActivity.EXTRA_START_SCREEN, targetScreen.name)
-        }
+        targetScreen?.let { gameIntent.putExtra(GameActivity.EXTRA_START_SCREEN, it.name) }
         startActivity(gameIntent)
     }
 }
@@ -76,82 +74,73 @@ private fun DungeonDiceFrogsHome(
     onHeroes: () -> Unit
 ) {
     var showSettings by remember { mutableStateOf(false) }
-    val gold = Color(0xFFFFC62D)
+    val background = Color(0xFF071009)
     val cream = Color(0xFFFFE9B4)
-    val green = Color(0xFF176B32)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0A120C))
-            .padding(horizontal = 18.dp, vertical = 22.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(background)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
             painter = painterResource(R.drawable.app_branding),
-            contentDescription = "Dungeon Dice Frogs",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(250.dp)
+            contentDescription = "Dungeon Dice Frogs app branding",
+            modifier = Modifier.size(82.dp),
+            contentScale = ContentScale.Fit
         )
+
+        Image(
+            painter = painterResource(R.drawable.home_logo),
+            contentDescription = "Dungeon Dice Frogs",
+            modifier = Modifier.fillMaxWidth(0.86f).aspectRatio(4f / 3f),
+            contentScale = ContentScale.Fit
+        )
+
+        Spacer(Modifier.height(4.dp))
+        ArtMenuButton(R.drawable.home_play, "Play", onPlay)
+        ArtMenuButton(R.drawable.home_continue, "Continue", onContinue)
+        ArtMenuButton(R.drawable.home_town, "Town", onTown)
+        ArtMenuButton(R.drawable.home_shop, "Shop", onShop)
+        ArtMenuButton(R.drawable.home_heroes, "Heroes", onHeroes)
+        ArtMenuButton(R.drawable.home_settings, "Settings") { showSettings = true }
 
         Text(
-            "DUNGEON DICE FROGS",
-            color = gold,
-            fontWeight = FontWeight.Black,
-            fontSize = 25.sp
+            "Your main frog is saved until it dies.",
+            color = cream,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
         )
-        Text("Choose an adventure", color = cream, fontSize = 13.sp)
-        Spacer(Modifier.height(18.dp))
-
-        HomeButtonRow("TOWN", onTown, "PLAY", onPlay, green, gold)
-        HomeButtonRow("SHOP", onShop, "HEROES", onHeroes, green, gold)
-        HomeButtonRow("SETTINGS", { showSettings = true }, "CONTINUE", onContinue, green, gold)
     }
 
     if (showSettings) {
         AlertDialog(
             onDismissRequest = { showSettings = false },
-            title = { Text("Settings") },
+            title = { Text("Settings", fontWeight = FontWeight.Black) },
             text = {
-                Text(
-                    "Your main frog is saved automatically and remains your character until it dies. " +
-                        "Dungeon floors and floor state are also persistent."
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Image(
+                        painter = painterResource(R.drawable.app_branding),
+                        contentDescription = "Dungeon Dice Frogs branding",
+                        modifier = Modifier.size(110.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Text("Settings options will be expanded as the game systems are finalized.")
+                }
             },
-            confirmButton = {
-                TextButton(onClick = { showSettings = false }) { Text("Close") }
-            }
+            confirmButton = { TextButton(onClick = { showSettings = false }) { Text("Close") } }
         )
     }
 }
 
 @Composable
-private fun HomeButtonRow(
-    leftText: String,
-    leftAction: () -> Unit,
-    rightText: String,
-    rightAction: () -> Unit,
-    green: Color,
-    gold: Color
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Button(
-            onClick = leftAction,
-            colors = ButtonDefaults.buttonColors(containerColor = green, contentColor = gold),
-            modifier = Modifier.weight(1f).height(62.dp)
-        ) {
-            Text(leftText, fontWeight = FontWeight.Black)
-        }
-        Button(
-            onClick = rightAction,
-            colors = ButtonDefaults.buttonColors(containerColor = green, contentColor = gold),
-            modifier = Modifier.weight(1f).height(62.dp)
-        ) {
-            Text(rightText, fontWeight = FontWeight.Black)
-        }
-    }
+private fun ArtMenuButton(drawable: Int, description: String, onClick: () -> Unit) {
+    Image(
+        painter = painterResource(drawable),
+        contentDescription = description,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).aspectRatio(3f).clickable(onClick = onClick),
+        contentScale = ContentScale.Fit
+    )
 }
