@@ -96,6 +96,42 @@ if town.exists():
 dungeon = JAVA / 'ProceduralDungeon.kt'
 if dungeon.exists():
     d = dungeon.read_text().replace('import androidx.compose.foundation.layout.weight\n', '')
+
+    # Kotlin's parser can reject the old compressed when-expression in types().
+    # Replace only that generator function with an equivalent normal multi-line implementation.
+    types_start = d.find('    private fun types(')
+    walls_start = d.find('\n    private fun walls(', types_start)
+    if types_start < 0 or walls_start < 0:
+        raise RuntimeError('Could not locate DungeonGenerator.types() for Kotlin repair')
+    repaired_types = '''    private fun types(
+        rooms: MutableList<DungeonRoomData>,
+        links: Array<MutableSet<Int>>,
+        start: DungeonCoord,
+        exit: DungeonCoord,
+        random: Random
+    ) {
+        rooms.forEachIndexed { index, room ->
+            val coord = co(index)
+            room.type = when {
+                coord == start -> DungeonRoomType.STAIRS_DOWN
+                room.mergedGroup?.startsWith("boss-") == true -> DungeonRoomType.BOSS
+                coord == exit -> DungeonRoomType.STAIRS_UP
+                room.mergedGroup != null -> DungeonRoomType.OPEN
+                else -> {
+                    val directions = links[index].map { dir(coord, co(it)) }
+                    val straight = directions.size == 2 && directions[0].opposite() == directions[1]
+                    when {
+                        straight && random.nextFloat() < 0.72f -> DungeonRoomType.HALLWAY
+                        directions.size in 2..3 && random.nextFloat() < 0.22f -> DungeonRoomType.HALLWAY
+                        random.nextFloat() < 0.10f -> DungeonRoomType.PILLAR
+                        random.nextFloat() < 0.12f -> DungeonRoomType.OPEN
+                        else -> DungeonRoomType.STANDARD
+                    }
+                }
+            }
+        }
+    }'''
+    d = d[:types_start] + repaired_types + d[walls_start:]
     d = d.replace('@Composable fun PersistentDungeonScreen(', '@Composable fun LegacyPersistentDungeonScreen(', 1)
     dungeon.write_text(d)
 
