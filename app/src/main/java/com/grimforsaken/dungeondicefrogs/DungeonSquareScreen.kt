@@ -464,7 +464,7 @@ private fun DrawScope.drawAtlasTile(
     height: Float
 ) {
     val index = (variant - 1).coerceAtLeast(0)
-    val sourceSize = 160
+    val sourceSize = 32
     drawImage(
         image = atlas,
         srcOffset = IntOffset((index % columns) * sourceSize, (index / columns) * sourceSize),
