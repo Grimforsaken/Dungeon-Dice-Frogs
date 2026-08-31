@@ -20,6 +20,16 @@ source = source.replace(old_guard, new_guard, 1)
 # Execute the established preflight with only the 0.3.4 compatibility changes above.
 exec(compile(source, 'patch_build.py', 'exec'), {'__name__': '__main__'})
 
+# MainActivity.kt is an obsolete development/fallback screen, but Android still
+# compiles it. The current enemy model no longer exposes the old text `icon`
+# property, so remove that legacy display line without changing the live enemy model.
+legacy_main = Path('app/src/main/java/com/grimforsaken/dungeondicefrogs/MainActivity.kt')
+if legacy_main.exists():
+    main_source = legacy_main.read_text()
+    stale_icon = '                        Text(enemy.icon, fontSize = 24.sp, modifier = Modifier.padding(end = 8.dp))\n'
+    if stale_icon in main_source:
+        legacy_main.write_text(main_source.replace(stale_icon, '', 1))
+
 required_v034 = [
     'boss_stormsting_sovereign.webp',
     'enemy_tier1_atlas.webp',
