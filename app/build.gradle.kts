@@ -11,8 +11,8 @@ android {
         applicationId = "com.grimforsaken.dungeondicefrogs"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.3.3-town-square-movement-art"
+        versionCode = 7
+        versionName = "0.3.4-full-tier1-content"
     }
 
     buildFeatures { compose = true }
