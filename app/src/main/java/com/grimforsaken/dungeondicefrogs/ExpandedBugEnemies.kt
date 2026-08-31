@@ -28,10 +28,12 @@ data class RegularBugEnemy(
 }
 
 /**
- * Regular / elite enemies supplied in dungeon_dice_frogs_bug_stats_and_images.zip.
+ * Additional regular Tier-1 enemies supplied in dungeon_dice_frogs_bug_stats_and_images.zip.
+ * They use the same regular encounter pool as the original Tier-1 bugs.
+ * There is no elite enemy classification or elite encounter gating.
  * These are explicitly NOT bosses. The butterfly remains non-electric.
  */
-val expandedRegularBugEnemies: List<RegularBugEnemy> = listOf(
+val tierOneAdditionalRegularBugEnemies: List<RegularBugEnemy> = listOf(
     RegularBugEnemy(
         id = "lightning_bug_dual_dagger_scout",
         name = "Lightning Bug Dual Dagger Scout",
@@ -151,10 +153,7 @@ fun dungeonEnemyRosterForFloor(floor: Int): List<DungeonEnemyDisplay> {
         )
     }
 
-    val bandPosition = ((floor.coerceAtLeast(1) - 1) % 10) + 1
-    if (bandPosition < 6 && tier == 1) return base
-
-    val expanded = expandedRegularBugEnemies.map { enemy ->
+    val additionalRegular = tierOneAdditionalRegularBugEnemies.map { enemy ->
         DungeonEnemyDisplay(
             id = enemy.id,
             name = enemy.name,
@@ -168,5 +167,6 @@ fun dungeonEnemyRosterForFloor(floor: Int): List<DungeonEnemyDisplay> {
             artRes = enemy.artRes
         )
     }
-    return base + expanded
+
+    return base + additionalRegular
 }
