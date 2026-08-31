@@ -3,6 +3,7 @@ package com.grimforsaken.dungeondicefrogs
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -31,16 +33,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 class GameActivity : ComponentActivity() {
-    companion object {
-        const val EXTRA_START_SCREEN = "start_screen"
-    }
+    companion object { const val EXTRA_START_SCREEN = "start_screen" }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,10 +50,7 @@ class GameActivity : ComponentActivity() {
         val requestedScreen = intent.getStringExtra(EXTRA_START_SCREEN)?.let { name ->
             runCatching { Screen.valueOf(name) }.getOrNull()
         } ?: world.lastScreen
-
-        setContent {
-            PersistentDungeonDiceFrogsApp(initialScreen = requestedScreen)
-        }
+        setContent { PersistentDungeonDiceFrogsApp(initialScreen = requestedScreen) }
     }
 }
 
@@ -92,24 +91,12 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
         if (strength <= 0 || dexterity <= 0 || constitution <= 0) return
         PlayerCharacterRepository.saveMainCharacter(
             context,
-            MainCharacterSave(
-                color = color,
-                strength = strength,
-                dexterity = dexterity,
-                constitution = constitution,
-                xp = xp,
-                unspentStatPoints = unspentStatPoints
-            )
+            MainCharacterSave(color, strength, dexterity, constitution, xp, unspentStatPoints)
         )
     }
 
     fun saveWorld(screen: Screen = Screen.valueOf(screenName)) {
-        PlayerCharacterRepository.saveWorldProgress(
-            context = context,
-            coins = coins,
-            highestDungeonFloor = highestDungeonFloor,
-            lastScreen = screen
-        )
+        PlayerCharacterRepository.saveWorldProgress(context, coins, highestDungeonFloor, screen)
     }
 
     val color = frogColorName?.let { runCatching { FrogColor.valueOf(it) }.getOrNull() }
@@ -129,14 +116,7 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
                     unspentStatPoints = 0
                     PlayerCharacterRepository.saveMainCharacter(
                         context,
-                        MainCharacterSave(
-                            color = chosenColor,
-                            strength = rolledStats.strength,
-                            dexterity = rolledStats.dexterity,
-                            constitution = rolledStats.constitution,
-                            xp = 0,
-                            unspentStatPoints = 0
-                        )
+                        MainCharacterSave(chosenColor, rolledStats.strength, rolledStats.dexterity, rolledStats.constitution, 0, 0)
                     )
                     saveWorld(Screen.valueOf(screenName))
                     notice = "${chosenColor.displayName} frog created. This is your main character until it dies."
@@ -147,7 +127,7 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
 
                 Box(Modifier.fillMaxSize()) {
                     when (screen) {
-                        Screen.TOWN -> TownHubScreen(
+                        Screen.TOWN -> TownHubScreenV034(
                             stats = stats,
                             inventory = inventory,
                             coins = coins,
@@ -157,7 +137,12 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
                             },
                             helpers = helpers,
                             highestDungeonFloor = highestDungeonFloor,
-                            onNotice = { notice = it }
+                            onNotice = { notice = it },
+                            frogColor = currentColor,
+                            onEnterDungeon = {
+                                screenName = Screen.DUNGEON.name
+                                saveWorld(Screen.DUNGEON)
+                            }
                         )
 
                         Screen.INVENTORY -> InventoryScreen(stats, inventory, equipped)
@@ -185,7 +170,7 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
                             onNotice = { notice = it }
                         )
 
-                        Screen.DUNGEON -> PersistentDungeonScreen(
+                        Screen.DUNGEON -> PersistentDungeonScreenV034(
                             frogColor = currentColor,
                             level = level,
                             xp = xp,
@@ -202,7 +187,6 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
                                 val newPlayerLevel = levelForXp(xp)
                                 val earnedPoints = statPointsEarnedForLevelIncrease(oldPlayerLevel, newPlayerLevel)
                                 unspentStatPoints += earnedPoints
-
                                 helpers.forEach { helper ->
                                     val oldHelperLevel = levelForXp(helper.xp)
                                     helper.xp += equalShare
@@ -210,12 +194,9 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
                                     helper.level = newHelperLevel
                                     helper.unspentStatPoints += statPointsEarnedForLevelIncrease(oldHelperLevel, newHelperLevel)
                                 }
-
                                 saveCharacter()
-                                val levelText = if (earnedPoints > 0) {
-                                    " Level $newPlayerLevel reached: +$earnedPoints stat points."
-                                } else ""
-                                notice = "Recovered Tier $lootTier loot. Main frog receives $playerGain XP.$levelText"
+                                notice = "Recovered Tier $lootTier loot. Main frog receives $playerGain XP." +
+                                    if (earnedPoints > 0) " Level $newPlayerLevel reached: +$earnedPoints stat points." else ""
                             },
                             onAdvanceFloor = {
                                 highestDungeonFloor += 1
@@ -241,12 +222,7 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
 
                     BottomNav(screen, Modifier.align(Alignment.BottomCenter)) { destination ->
                         screenName = destination.name
-                        PlayerCharacterRepository.saveWorldProgress(
-                            context,
-                            coins,
-                            highestDungeonFloor,
-                            destination
-                        )
+                        PlayerCharacterRepository.saveWorldProgress(context, coins, highestDungeonFloor, destination)
                     }
 
                     if (notice.isNotBlank()) {
@@ -255,15 +231,8 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
                             colors = CardDefaults.cardColors(containerColor = Color(0xEE27170F))
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    notice,
-                                    color = GameCream,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(12.dp).weight(1f)
-                                )
-                                TextButton(onClick = { notice = "" }) {
-                                    Text("×", color = GameGold, fontSize = 22.sp)
-                                }
+                                Text(notice, color = GameCream, fontWeight = FontWeight.Bold, modifier = Modifier.padding(12.dp).weight(1f))
+                                TextButton(onClick = { notice = "" }) { Text("×", color = GameGold, fontSize = 22.sp) }
                             }
                         }
                     }
@@ -284,35 +253,17 @@ private fun MainFrogCreationScreen(onCreated: (FrogColor, HeroStats) -> Unit) {
     val rolled = rolledStrength > 0 && rolledDexterity > 0 && rolledConstitution > 0
 
     Column(
-        Modifier
-            .fillMaxSize()
-            .background(GameDark)
-            .padding(20.dp)
-            .verticalScroll(rememberScrollState()),
+        Modifier.fillMaxSize().background(GameDark).padding(20.dp).verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            "CREATE YOUR MAIN FROG",
-            color = GameGold,
-            fontWeight = FontWeight.Black,
-            fontSize = 25.sp,
-            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
-        )
-        Text(
-            "You keep this frog until it dies. Only then can you create a replacement main character.",
-            color = GameCream,
-            textAlign = TextAlign.Center,
-            fontSize = 13.sp,
-            modifier = Modifier.padding(bottom = 18.dp)
-        )
+        Text("CREATE YOUR MAIN FROG", color = GameGold, fontWeight = FontWeight.Black, fontSize = 25.sp, modifier = Modifier.padding(top = 24.dp, bottom = 8.dp))
+        Text("You keep this frog until it dies. Only then can you create a replacement main character.", color = GameCream, textAlign = TextAlign.Center, fontSize = 13.sp, modifier = Modifier.padding(bottom = 18.dp))
 
         FrogColor.values().forEach { frogColor ->
             val isSelected = frogColor == selected
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) Color(0xFF6A4A1B) else GameBrown
-                ),
+                colors = CardDefaults.cardColors(containerColor = if (isSelected) Color(0xFF6A4A1B) else GameBrown),
                 onClick = {
                     selectedName = frogColor.name
                     rolledStrength = 0
@@ -320,59 +271,37 @@ private fun MainFrogCreationScreen(onCreated: (FrogColor, HeroStats) -> Unit) {
                     rolledConstitution = 0
                 }
             ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(13.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(frogColorEmoji(frogColor), fontSize = 30.sp, modifier = Modifier.padding(end = 12.dp))
-                    Column {
-                        Text(
-                            "${frogColor.displayName} Frog",
-                            color = GameGold,
-                            fontWeight = FontWeight.Black,
-                            fontSize = 17.sp
-                        )
-                        Text(
-                            "Immune: ${elementalImmunityText(frogColor)}",
-                            color = GameCream,
-                            fontSize = 11.sp
-                        )
+                Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(frogArtResource(frogColor)),
+                        contentDescription = "${frogColor.displayName} frog",
+                        modifier = Modifier.size(78.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Column(Modifier.padding(start = 10.dp)) {
+                        Text("${frogColor.displayName} Frog", color = GameGold, fontWeight = FontWeight.Black, fontSize = 17.sp)
+                        Text("Immune: ${elementalImmunityText(frogColor)}", color = GameCream, fontSize = 11.sp)
                     }
                 }
             }
         }
 
         if (selected != null && !rolled) {
-            Button(
-                onClick = {
-                    val stats = rollCharacterStats()
-                    rolledStrength = stats.strength
-                    rolledDexterity = stats.dexterity
-                    rolledConstitution = stats.constitution
-                },
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                Text("Roll 3d6 For Each Stat")
-            }
+            Button(onClick = {
+                val r = rollCharacterStats()
+                rolledStrength = r.strength
+                rolledDexterity = r.dexterity
+                rolledConstitution = r.constitution
+            }, modifier = Modifier.padding(top = 16.dp)) { Text("Roll 3d6 For Each Stat") }
         }
 
         if (selected != null && rolled) {
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                 CreationStat("STR", rolledStrength)
                 CreationStat("DEX", rolledDexterity)
                 CreationStat("CON", rolledConstitution)
             }
-            Button(
-                onClick = {
-                    onCreated(
-                        selected,
-                        HeroStats(rolledStrength, rolledDexterity, rolledConstitution)
-                    )
-                }
-            ) {
+            Button(onClick = { onCreated(selected, HeroStats(rolledStrength, rolledDexterity, rolledConstitution)) }) {
                 Text("Begin With This Frog")
             }
         }
@@ -382,10 +311,7 @@ private fun MainFrogCreationScreen(onCreated: (FrogColor, HeroStats) -> Unit) {
 @Composable
 private fun CreationStat(label: String, value: Int) {
     Card(colors = CardDefaults.cardColors(containerColor = GameBrown)) {
-        Column(
-            Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(label, color = GameCream, fontSize = 11.sp)
             Text(value.toString(), color = GameGold, fontWeight = FontWeight.Black, fontSize = 25.sp)
             Text("3d6", color = Color.Gray, fontSize = 9.sp)
