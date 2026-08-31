@@ -1,5 +1,7 @@
 package com.grimforsaken.dungeondicefrogs
 
+import androidx.annotation.DrawableRes
+
 data class RegularBugEnemy(
     val id: String,
     val name: String,
@@ -14,7 +16,8 @@ data class RegularBugEnemy(
     val weaponSummary: String,
     val artIndex: Int,
     val elementalAttack: ElementType? = null,
-    val hasShield: Boolean = false
+    val hasShield: Boolean = false,
+    @DrawableRes val legacyArtRes: Int
 ) {
     fun statsForTier(tier: Int): HeroStats {
         val bonus = tier.coerceAtLeast(1) - 1
@@ -31,94 +34,12 @@ data class RegularBugEnemy(
 
 /** All six are regular Tier-1 enemies. There is no elite class in Tier 1. */
 val tierOneAdditionalRegularBugEnemies: List<RegularBugEnemy> = listOf(
-    RegularBugEnemy(
-        id = "lightning_bug_dual_dagger_scout",
-        name = "Sparkstab",
-        role = "Lightning Bug • fast dual-dagger striker",
-        armorType = "Light Armor",
-        baseStats = HeroStats(9, 15, 10),
-        hp = 12,
-        armorClass = 1,
-        move = 7,
-        standGroundBonus = 1,
-        weaponName = "Twin Lightning Daggers",
-        weaponSummary = "2 dagger attacks; chance for a 3rd; lightning effect on the first successful hit.",
-        artIndex = 14,
-        elementalAttack = ElementType.LIGHTNING
-    ),
-    RegularBugEnemy(
-        id = "ladybug_sword_shield_guard",
-        name = "Cloverguard",
-        role = "Ladybug • sword-and-shield defender",
-        armorType = "Medium Armor + Shield",
-        baseStats = HeroStats(13, 13, 14),
-        hp = 15,
-        armorClass = 2,
-        move = 6,
-        standGroundBonus = 3,
-        weaponName = "Clover Sword + Shield",
-        weaponSummary = "1d4 straight-blade attack; shield defense; 15% bleed chance.",
-        artIndex = 15,
-        hasShield = true
-    ),
-    RegularBugEnemy(
-        id = "ladybug_two_handed_blunt_mystic",
-        name = "Cloverbonk",
-        role = "Ladybug • two-handed blunt bruiser",
-        armorType = "Medium Armor",
-        baseStats = HeroStats(15, 10, 15),
-        hp = 18,
-        armorClass = 2,
-        move = 4,
-        standGroundBonus = 2,
-        weaponName = "Clover Maul",
-        weaponSummary = "1d8 blunt; ignores shields and 2 AC; skips every 3rd attack turn.",
-        artIndex = 16
-    ),
-    RegularBugEnemy(
-        id = "lightning_bug_thunder_axe_raider",
-        name = "Voltcleaver",
-        role = "Lightning Bug • thunder-axe raider",
-        armorType = "Medium Armor",
-        baseStats = HeroStats(14, 12, 13),
-        hp = 16,
-        armorClass = 2,
-        move = 5,
-        standGroundBonus = 2,
-        weaponName = "Thunder Axe",
-        weaponSummary = "1d6 axe; 30% bleed; lightning effect on the first successful hit.",
-        artIndex = 17,
-        elementalAttack = ElementType.LIGHTNING
-    ),
-    RegularBugEnemy(
-        id = "june_bug_heavy_shield_guard",
-        name = "Bronzebulwark",
-        role = "June Bug • heavy shield guard",
-        armorType = "Heavy Armor + Shield",
-        baseStats = HeroStats(16, 8, 16),
-        hp = 22,
-        armorClass = 3,
-        move = 5,
-        standGroundBonus = 4,
-        weaponName = "Shell Cleaver + Shield",
-        weaponSummary = "Heavy armored blocker; shield adds defense and reduces movement by 1.",
-        artIndex = 18,
-        hasShield = true
-    ),
-    RegularBugEnemy(
-        id = "june_bug_heavy_dual_blade_raider",
-        name = "Shellslash",
-        role = "June Bug • heavy dual-blade raider",
-        armorType = "Heavy Armor",
-        baseStats = HeroStats(14, 13, 15),
-        hp = 19,
-        armorClass = 3,
-        move = 4,
-        standGroundBonus = 3,
-        weaponName = "Twin Shell Blades",
-        weaponSummary = "2 blade attacks; chance for a 3rd attack.",
-        artIndex = 19
-    )
+    RegularBugEnemy("lightning_bug_dual_dagger_scout", "Sparkstab", "Lightning Bug • fast dual-dagger striker", "Light Armor", HeroStats(9,15,10), 12,1,7,1, "Twin Lightning Daggers", "2 dagger attacks; chance for a 3rd; lightning effect on the first successful hit.", 14, ElementType.LIGHTNING, false, R.drawable.enemy_01_lightning_bug_dual_dagger_scout),
+    RegularBugEnemy("ladybug_sword_shield_guard", "Cloverguard", "Ladybug • sword-and-shield defender", "Medium Armor + Shield", HeroStats(13,13,14), 15,2,6,3, "Clover Sword + Shield", "1d4 straight-blade attack; shield defense; 15% bleed chance.", 15, null, true, R.drawable.enemy_02_ladybug_sword_shield_guard),
+    RegularBugEnemy("ladybug_two_handed_blunt_mystic", "Cloverbonk", "Ladybug • two-handed blunt bruiser", "Medium Armor", HeroStats(15,10,15), 18,2,4,2, "Clover Maul", "1d8 blunt; ignores shields and 2 AC; skips every 3rd attack turn.", 16, null, false, R.drawable.enemy_03_ladybug_two_handed_blunt_mystic),
+    RegularBugEnemy("lightning_bug_thunder_axe_raider", "Voltcleaver", "Lightning Bug • thunder-axe raider", "Medium Armor", HeroStats(14,12,13), 16,2,5,2, "Thunder Axe", "1d6 axe; 30% bleed; lightning effect on the first successful hit.", 17, ElementType.LIGHTNING, false, R.drawable.enemy_04_lightning_bug_thunder_axe_raider),
+    RegularBugEnemy("june_bug_heavy_shield_guard", "Bronzebulwark", "June Bug • heavy shield guard", "Heavy Armor + Shield", HeroStats(16,8,16), 22,3,5,4, "Shell Cleaver + Shield", "Heavy armored blocker; shield adds defense and reduces movement by 1.", 18, null, true, R.drawable.enemy_05_june_bug_heavy_shield_guard),
+    RegularBugEnemy("june_bug_heavy_dual_blade_raider", "Shellslash", "June Bug • heavy dual-blade raider", "Heavy Armor", HeroStats(14,13,15), 19,3,4,3, "Twin Shell Blades", "2 blade attacks; chance for a 3rd attack.", 19, null, false, R.drawable.enemy_06_june_bug_heavy_dual_blade_raider)
 )
 
 data class DungeonEnemyDisplay(
@@ -132,7 +53,8 @@ data class DungeonEnemyDisplay(
     val weaponText: String,
     val elementalAttack: ElementType?,
     val artIndex: Int,
-    val isBoss: Boolean = false
+    val isBoss: Boolean = false,
+    @DrawableRes val artRes: Int
 )
 
 private fun elementSuffix(element: ElementType?): String = when (element) {
@@ -156,7 +78,8 @@ fun dungeonEnemyRosterForFloor(floor: Int): List<DungeonEnemyDisplay> {
             move = enemy.effectiveMove(),
             weaponText = "${enemy.weapon.displayName}: ${enemy.attackText()}${elementSuffix(enemy.elementalAttack)}",
             elementalAttack = enemy.elementalAttack,
-            artIndex = enemy.artIndex
+            artIndex = enemy.artIndex,
+            artRes = baseBugArtResource(enemy.species)
         )
     }
 
@@ -171,7 +94,8 @@ fun dungeonEnemyRosterForFloor(floor: Int): List<DungeonEnemyDisplay> {
             move = enemy.effectiveMove(),
             weaponText = "${enemy.weaponName}: ${enemy.weaponSummary}${elementSuffix(enemy.elementalAttack)}",
             elementalAttack = enemy.elementalAttack,
-            artIndex = enemy.artIndex
+            artIndex = enemy.artIndex,
+            artRes = enemy.legacyArtRes
         )
     }
 
@@ -190,5 +114,6 @@ val tierOneFloorTenBoss = DungeonEnemyDisplay(
     weaponText = "3 attacks/turn: Dagger 1 (1d2+2), Dagger 2 (1d2+2), Short Sword (1d4+2) • LIGHTNING effect",
     elementalAttack = ElementType.LIGHTNING,
     artIndex = -1,
-    isBoss = true
+    isBoss = true,
+    artRes = R.drawable.enemy_bee
 )
