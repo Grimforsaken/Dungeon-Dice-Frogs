@@ -31,10 +31,10 @@ enum class EnemyWeaponStyle(val displayName: String) {
 
 data class EnemyVariant(
     val id: String,
+    val name: String,
     val species: String,
     val variant: Int,
-    val icon: String,
-    val artKey: String,
+    val artIndex: Int,
     val tierOneStats: HeroStats,
     val hp: Int,
     val armorClass: Int,
@@ -43,8 +43,6 @@ data class EnemyVariant(
     val hasShield: Boolean = false,
     val elementalAttack: ElementType? = null
 ) {
-    val name: String get() = "$species Variant $variant"
-
     /** Every tier after Tier 1 adds +1 to STR, DEX, and CON. */
     fun statsForTier(tier: Int): HeroStats {
         val bonus = tier.coerceAtLeast(1) - 1
@@ -85,12 +83,11 @@ fun frogColorEmoji(color: FrogColor): String = when (color) {
 
 fun elementalImmunityText(color: FrogColor): String = when (color) {
     FrogColor.RED -> "Fire damage and Burning"
-    FrogColor.BLUE -> "Ice effects"
-    FrogColor.YELLOW -> "Lightning damage and Lightning stun"
-    FrogColor.GREEN -> "Poison damage"
+    FrogColor.BLUE -> "Ice damage and Ice effects"
+    FrogColor.YELLOW -> "Lightning damage and Lightning effects"
+    FrogColor.GREEN -> "Poison damage and Poison effects"
 }
 
-/** Matching frog colors take no damage and no status from that element. */
 data class ElementResolution(val damage: Int, val statusApplies: Boolean, val immune: Boolean)
 
 fun resolveElementAgainstFrog(color: FrogColor, element: ElementType, damage: Int): ElementResolution {
@@ -98,61 +95,40 @@ fun resolveElementAgainstFrog(color: FrogColor, element: ElementType, damage: In
     return ElementResolution(damage.coerceAtLeast(0), true, false)
 }
 
-// ----- Established character leveling -----
-
-/** Level 1 = 0 XP, Level 2 = 10 XP, Level 3 = 20 XP, and so on. */
 fun levelForXp(totalXp: Int): Int = 1 + totalXp.coerceAtLeast(0) / 10
-
 fun xpRequiredForLevel(level: Int): Int = (level.coerceAtLeast(1) - 1) * 10
-
 fun xpRequiredForNextLevel(totalXp: Int): Int = xpRequiredForLevel(levelForXp(totalXp) + 1)
-
-/** Loot XP is one-for-one with loot tier. Enemy kills themselves grant 0 XP. */
 fun xpForRecoveredLootTier(lootTier: Int): Int = lootTier.coerceAtLeast(1)
+fun statPointsEarnedForLevelIncrease(oldLevel: Int, newLevel: Int): Int = ((newLevel - oldLevel).coerceAtLeast(0)) * 2
 
-fun statPointsEarnedForLevelIncrease(oldLevel: Int, newLevel: Int): Int =
-    ((newLevel - oldLevel).coerceAtLeast(0)) * 2
-
-// ----- Established dungeon / monster tier rules -----
-
-/** Tier 1 = floors 1-10, Tier 2 = 11-20, etc. */
 fun tierForDungeonFloor(floor: Int): Int = ((floor.coerceAtLeast(1) - 1) / 10) + 1
-
-/** Current design begins introducing the next tier halfway through a 10-floor band: floor 6, 16, 26, etc. */
-fun nextTierEnemiesCanAppear(floor: Int): Boolean {
-    val bandPosition = ((floor.coerceAtLeast(1) - 1) % 10) + 1
-    return bandPosition >= 6
-}
-
-/** Cumulative difficulty multiplier: 1.0, 1.5, 2.25, 3.375 ... */
+fun nextTierEnemiesCanAppear(floor: Int): Boolean = (((floor.coerceAtLeast(1) - 1) % 10) + 1) >= 6
 fun enemyDifficultyMultiplier(tier: Int): Double = 1.5.pow((tier.coerceAtLeast(1) - 1).toDouble())
 
 /**
- * Tier 1 uses two variants of each of the seven Feed the Frog bugs.
- * Art identity is important:
- * - Fly = black fuzzy body, huge red eyes.
- * - Mosquito = long proboscis, red abdomen.
- * - Dragonfly = blue dragon-like insect with long tail and four wings.
+ * Regular Tier-1 enemy individuals. Each variation has its own name and stats.
+ * Art indices correspond to enemy_tier1_atlas.webp.
+ * Dragonflies use ICE, Fireflies use FIRE, Poison Flies use POISON.
  */
 val tierOneBugEnemies: List<EnemyVariant> = listOf(
-    EnemyVariant("fly_v1", "Fly", 1, "🪰", "fly_black_fuzzy_red_eyes_1", HeroStats(5, 11, 6), hp = 6, armorClass = 0, move = 5, weapon = EnemyWeaponStyle.DAGGER),
-    EnemyVariant("fly_v2", "Fly", 2, "🪰", "fly_black_fuzzy_red_eyes_2", HeroStats(6, 10, 7), hp = 7, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.SHORT_SWORD),
+    EnemyVariant("fly_v1", "Buzzbite", "Fly", 1, 0, HeroStats(5, 11, 6), hp = 10, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.DAGGER),
+    EnemyVariant("fly_v2", "Grumblegnat", "Fly", 2, 1, HeroStats(6, 10, 7), hp = 13, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.SHORT_SWORD),
 
-    EnemyVariant("mosquito_v1", "Mosquito", 1, "🦟", "mosquito_long_proboscis_red_abdomen_1", HeroStats(4, 13, 5), hp = 5, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.DAGGER),
-    EnemyVariant("mosquito_v2", "Mosquito", 2, "🦟", "mosquito_long_proboscis_red_abdomen_2", HeroStats(5, 12, 6), hp = 6, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD),
+    EnemyVariant("mosquito_v1", "Needlezip", "Mosquito", 1, 2, HeroStats(4, 13, 5), hp = 9, armorClass = 0, move = 8, weapon = EnemyWeaponStyle.SHORT_SWORD),
+    EnemyVariant("mosquito_v2", "Skeetersting", "Mosquito", 2, 3, HeroStats(5, 12, 6), hp = 11, armorClass = 0, move = 7, weapon = EnemyWeaponStyle.DAGGER),
 
-    EnemyVariant("butterfly_v1", "Butterfly", 1, "🦋", "butterfly_blue_gold_1", HeroStats(6, 11, 6), hp = 6, armorClass = 0, move = 5, weapon = EnemyWeaponStyle.DAGGER),
-    EnemyVariant("butterfly_v2", "Butterfly", 2, "🦋", "butterfly_blue_gold_2", HeroStats(7, 12, 6), hp = 6, armorClass = 1, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD),
+    EnemyVariant("butterfly_v1", "Honeyflutter", "Butterfly", 1, 4, HeroStats(6, 11, 7), hp = 8, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.DAGGER),
+    EnemyVariant("butterfly_v2", "Bloomflutter", "Butterfly", 2, 5, HeroStats(7, 12, 8), hp = 10, armorClass = 1, move = 7, weapon = EnemyWeaponStyle.SHORT_SWORD),
 
-    EnemyVariant("bee_v1", "Bee", 1, "🐝", "bee_honey_1", HeroStats(8, 10, 8), hp = 8, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.DAGGER),
-    EnemyVariant("bee_v2", "Bee", 2, "🐝", "bee_honey_shield_2", HeroStats(9, 9, 9), hp = 9, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.SHORT_SWORD, hasShield = true),
+    EnemyVariant("bee_v1", "Honeyjab", "Bee", 1, 6, HeroStats(8, 10, 8), hp = 12, armorClass = 1, move = 7, weapon = EnemyWeaponStyle.SHORT_SWORD),
+    EnemyVariant("bee_v2", "Bumblebulwark", "Bee", 2, 7, HeroStats(9, 9, 10), hp = 17, armorClass = 1, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD, hasShield = true),
 
-    EnemyVariant("dragonfly_v1", "Dragonfly", 1, "🐉", "dragonfly_blue_draconic_1", HeroStats(7, 13, 6), hp = 6, armorClass = 1, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD),
-    EnemyVariant("dragonfly_v2", "Dragonfly", 2, "🐉", "dragonfly_blue_draconic_2", HeroStats(8, 14, 7), hp = 7, armorClass = 1, move = 7, weapon = EnemyWeaponStyle.DAGGER),
+    EnemyVariant("dragonfly_v1", "Frostflutter", "Dragonfly", 1, 8, HeroStats(7, 14, 6), hp = 11, armorClass = 1, move = 8, weapon = EnemyWeaponStyle.DAGGER, elementalAttack = ElementType.ICE),
+    EnemyVariant("dragonfly_v2", "Chilldart", "Dragonfly", 2, 9, HeroStats(8, 13, 7), hp = 13, armorClass = 1, move = 7, weapon = EnemyWeaponStyle.SHORT_SWORD, elementalAttack = ElementType.ICE),
 
-    EnemyVariant("poison_fly_v1", "Poison Fly", 1, "☠️🪰", "poison_fly_green_purple_blunt_1", HeroStats(9, 8, 9), hp = 9, armorClass = 1, move = 4, weapon = EnemyWeaponStyle.BLUNT, elementalAttack = ElementType.POISON),
-    EnemyVariant("poison_fly_v2", "Poison Fly", 2, "☠️🪰", "poison_fly_green_purple_axe_2", HeroStats(8, 10, 8), hp = 8, armorClass = 1, move = 5, weapon = EnemyWeaponStyle.AXE, elementalAttack = ElementType.POISON),
+    EnemyVariant("poison_fly_v1", "Gloomgloop", "Poison Fly", 1, 10, HeroStats(9, 8, 9), hp = 14, armorClass = 1, move = 6, weapon = EnemyWeaponStyle.AXE, elementalAttack = ElementType.POISON),
+    EnemyVariant("poison_fly_v2", "Blightbonk", "Poison Fly", 2, 11, HeroStats(10, 9, 11), hp = 18, armorClass = 2, move = 4, weapon = EnemyWeaponStyle.BLUNT, elementalAttack = ElementType.POISON),
 
-    EnemyVariant("firefly_v1", "Firefly", 1, "🔥🪰", "firefly_actual_fire_1", HeroStats(6, 12, 6), hp = 6, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.DAGGER, elementalAttack = ElementType.FIRE),
-    EnemyVariant("firefly_v2", "Firefly", 2, "🔥🪰", "firefly_actual_fire_2", HeroStats(5, 13, 6), hp = 6, armorClass = 0, move = 6, weapon = EnemyWeaponStyle.SHORT_SWORD, elementalAttack = ElementType.FIRE)
+    EnemyVariant("firefly_v1", "Emberblink", "Firefly", 1, 12, HeroStats(6, 12, 7), hp = 10, armorClass = 0, move = 7, weapon = EnemyWeaponStyle.SHORT_SWORD, elementalAttack = ElementType.FIRE),
+    EnemyVariant("firefly_v2", "Glowflare", "Firefly", 2, 13, HeroStats(7, 13, 8), hp = 13, armorClass = 1, move = 6, weapon = EnemyWeaponStyle.DAGGER, elementalAttack = ElementType.FIRE)
 )
