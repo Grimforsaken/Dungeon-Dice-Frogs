@@ -11,8 +11,8 @@ android {
         applicationId = "com.grimforsaken.dungeondicefrogs"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.3.4-full-tier1-content"
+        versionCode = 9
+        versionName = "0.3.4-stable"
     }
 
     val stableDebugKeystore = file("stable-debug.keystore")
