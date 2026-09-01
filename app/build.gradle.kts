@@ -8,7 +8,9 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.grimforsaken.dungeondicefrogs"
+        // Clean package ID intentionally avoids the old development APK's incompatible signer.
+        // Future clean builds keep this same ID and stable signing key so updates work normally.
+        applicationId = "com.grimforsaken.dungeondicefrogs.stable"
         minSdk = 26
         targetSdk = 35
         versionCode = 10
