@@ -47,8 +47,8 @@ jobs:
           base64 --decode signing/stable-debug.keystore.b64 > app/stable-debug.keystore
           keytool -list -keystore app/stable-debug.keystore -storepass android -alias androiddebugkey >/dev/null
 
-      - name: Apply source preflight
-        run: python3 patch_build.py
+      - name: Apply clean 0.3.5 source preflight
+        run: python3 patch_build_v034.py
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon --stacktrace
