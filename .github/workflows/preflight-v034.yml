@@ -37,11 +37,24 @@ jobs:
         with:
           gradle-version: "8.7"
 
+      - name: Restore stable development signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode signing/stable-debug.keystore.b64 > app/stable-debug.keystore
+          keytool -list -keystore app/stable-debug.keystore -storepass android -alias androiddebugkey >/dev/null
+
       - name: Apply source preflight
         run: python3 patch_build_v034.py
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Verify stable APK signer
+        shell: bash
+        run: |
+          set -euo pipefail
+          "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload preflight APK
         uses: actions/upload-artifact@v4
