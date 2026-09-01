@@ -56,8 +56,20 @@ jobs:
           set -euo pipefail
           "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Package APK signing tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -czf apksigner-tools-35.tar.gz -C "${ANDROID_HOME}/build-tools/35.0.0" apksigner lib/apksigner.jar
+
       - name: Upload preflight APK
         uses: actions/upload-artifact@v4
         with:
           name: DungeonDiceFrogs-0.3.4-preflight
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload APK signing tools
+        uses: actions/upload-artifact@v4
+        with:
+          name: apksigner-tools-35
+          path: apksigner-tools-35.tar.gz
