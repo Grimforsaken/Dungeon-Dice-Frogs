@@ -11,8 +11,25 @@ android {
         applicationId = "com.grimforsaken.dungeondicefrogs"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
+        versionCode = 8
         versionName = "0.3.4-full-tier1-content"
+    }
+
+    val stableDebugKeystore = file("stable-debug.keystore")
+    if (stableDebugKeystore.exists()) {
+        signingConfigs {
+            create("stableDebug") {
+                storeFile = stableDebugKeystore
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
+        buildTypes {
+            getByName("debug") {
+                signingConfig = signingConfigs.getByName("stableDebug")
+            }
+        }
     }
 
     buildFeatures { compose = true }
