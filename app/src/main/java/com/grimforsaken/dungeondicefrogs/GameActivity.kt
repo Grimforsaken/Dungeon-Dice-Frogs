@@ -170,7 +170,7 @@ fun PersistentDungeonDiceFrogsApp(initialScreen: Screen) {
                             onNotice = { notice = it }
                         )
 
-                        Screen.DUNGEON -> PersistentDungeonScreenV034(
+                        Screen.DUNGEON -> PersistentDungeonScreenV035(
                             frogColor = currentColor,
                             level = level,
                             xp = xp,
