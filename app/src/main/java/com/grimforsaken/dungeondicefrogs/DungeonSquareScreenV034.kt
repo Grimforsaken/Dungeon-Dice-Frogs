@@ -48,35 +48,55 @@ import kotlin.math.roundToInt
 private data class V034Position(val roomX: Int, val roomY: Int, val squareX: Int, val squareY: Int)
 
 private object V034PositionRepository {
-    private const val PREFS = "dungeon_square_positions_v034"
+    private const val PREFS_V2 = "dungeon_square_positions_v2"
+    private const val PREFS_LEGACY = "dungeon_square_positions_v034"
 
-    fun load(context: Context, floor: DungeonFloorData, state: DungeonFloorState): V034Position {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    fun load(context: Context, floor: V2DungeonFloorData, state: V2DungeonFloorState): V034Position {
+        val prefs = context.getSharedPreferences(PREFS_V2, Context.MODE_PRIVATE)
         val prefix = "floor_${floor.floor}_"
-        if (!prefs.contains(prefix + "room_x")) {
-            val start = floor.roomAt(state.currentRoom.x, state.currentRoom.y)
-            return V034Position(
-                state.currentRoom.x,
-                state.currentRoom.y,
-                start.stairs?.x ?: 4,
-                start.stairs?.y ?: 4
-            ).also { save(context, floor.floor, it) }
+        if (prefs.contains(prefix + "room_x")) {
+            val loaded = V034Position(
+                prefs.getInt(prefix + "room_x", state.currentRoom.x).coerceIn(0, 9),
+                prefs.getInt(prefix + "room_y", state.currentRoom.y).coerceIn(0, 9),
+                prefs.getInt(prefix + "square_x", 5).coerceIn(0, 9),
+                prefs.getInt(prefix + "square_y", 5).coerceIn(0, 9)
+            )
+            if (floor.roomAt(loaded.roomX, loaded.roomY).present) return loaded
         }
+
+        // Preserve exact square position from the previous renderer when possible.
+        val legacy = context.getSharedPreferences(PREFS_LEGACY, Context.MODE_PRIVATE)
+        if (legacy.contains(prefix + "room_x")) {
+            val migrated = V034Position(
+                legacy.getInt(prefix + "room_x", state.currentRoom.x).coerceIn(0, 9),
+                legacy.getInt(prefix + "room_y", state.currentRoom.y).coerceIn(0, 9),
+                legacy.getInt(prefix + "square_x", 5).coerceIn(0, 9),
+                legacy.getInt(prefix + "square_y", 5).coerceIn(0, 9)
+            )
+            if (floor.roomAt(migrated.roomX, migrated.roomY).present) {
+                save(context, floor.floor, migrated)
+                return migrated
+            }
+        }
+
+        val start = floor.roomAt(state.currentRoom.x, state.currentRoom.y).takeIf { it.present }
+            ?: floor.roomAt(floor.startRoom.x, floor.startRoom.y)
+        val stairs = start.stairs
         return V034Position(
-            prefs.getInt(prefix + "room_x", state.currentRoom.x).coerceIn(0, 9),
-            prefs.getInt(prefix + "room_y", state.currentRoom.y).coerceIn(0, 9),
-            prefs.getInt(prefix + "square_x", 4).coerceIn(0, 9),
-            prefs.getInt(prefix + "square_y", 4).coerceIn(0, 9)
-        )
+            start.x,
+            start.y,
+            stairs?.x ?: 5,
+            stairs?.y ?: 5
+        ).also { save(context, floor.floor, it) }
     }
 
-    fun save(context: Context, floorNumber: Int, p: V034Position) {
+    fun save(context: Context, floorNumber: Int, position: V034Position) {
         val prefix = "floor_${floorNumber}_"
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putInt(prefix + "room_x", p.roomX)
-            .putInt(prefix + "room_y", p.roomY)
-            .putInt(prefix + "square_x", p.squareX)
-            .putInt(prefix + "square_y", p.squareY)
+        context.getSharedPreferences(PREFS_V2, Context.MODE_PRIVATE).edit()
+            .putInt(prefix + "room_x", position.roomX)
+            .putInt(prefix + "room_y", position.roomY)
+            .putInt(prefix + "square_x", position.squareX)
+            .putInt(prefix + "square_y", position.squareY)
             .apply()
     }
 }
@@ -98,8 +118,8 @@ fun PersistentDungeonScreenV034(
     onCharacterDeath: () -> Unit
 ) {
     val context = LocalContext.current
-    val floor = remember(highestDungeonFloor) { DungeonFloorRepository.loadOrGenerate(context, highestDungeonFloor) }
-    var floorState by remember(highestDungeonFloor) { mutableStateOf(DungeonFloorRepository.loadState(context, floor)) }
+    val floor = remember(highestDungeonFloor) { V2DungeonFloorRepository.loadOrGenerate(context, highestDungeonFloor) }
+    var floorState by remember(highestDungeonFloor) { mutableStateOf(V2DungeonFloorRepository.loadState(context, floor)) }
     val initial = remember(highestDungeonFloor) { V034PositionRepository.load(context, floor, floorState) }
 
     var roomX by rememberSaveable(highestDungeonFloor) { mutableStateOf(initial.roomX) }
@@ -109,22 +129,34 @@ fun PersistentDungeonScreenV034(
 
     val room = floor.roomAt(roomX, roomY)
     val roster = remember(floor.floor) { dungeonEnemyRosterForFloor(floor.floor) }
-    val regularIndex = ((floor.seed.toInt() xor (roomX * 97) xor (roomY * 193)).absoluteValue) % roster.size
-    val roomEnemy = if (floor.floor == 10 && room.type == DungeonRoomType.BOSS && !floorState.bossDefeated) {
-        tierOneFloorTenBoss
-    } else roster[regularIndex]
+    val activeEncounter = room.encounters.firstOrNull { it.id !in floorState.defeatedEnemies }
+    val roomEnemy = activeEncounter?.let { encounter ->
+        if (encounter.boss && floor.floor == 10) {
+            tierOneFloorTenBoss
+        } else {
+            val index = ((floor.seed.toInt() xor (roomX * 97) xor (roomY * 193) xor encounter.id.hashCode()).absoluteValue) % roster.size
+            roster[index]
+        }
+    }
+    val activeTreasure = room.treasure.firstOrNull { it.id !in floorState.openedChests && it.id !in floorState.collectedLoot }
 
-    fun persist() {
+    fun persistPosition() {
         V034PositionRepository.save(context, floor.floor, V034Position(roomX, roomY, squareX, squareY))
     }
 
-    fun cellWalkable(targetRoom: DungeonRoomData, x: Int, y: Int): Boolean {
-        if (x !in 0..9 || y !in 0..9) return false
-        if (targetRoom.pillars.any { it.x == x && it.y == y }) return false
+    fun wallPassable(wall: V2SharedWall, offset: Int): Boolean = when (wall.kind) {
+        V2WallKind.SOLID -> false
+        V2WallKind.DOORWAY -> wall.doorwayOffset == offset
+        V2WallKind.OPEN -> offset in 1..8
+        V2WallKind.SECRET -> wall.key in floorState.unlockedDoors && wall.doorwayOffset == offset
+    }
+
+    fun cellWalkable(targetRoom: V2DungeonRoomData, x: Int, y: Int): Boolean {
+        if (!targetRoom.present || x !in 0..9 || y !in 0..9) return false
         if (targetRoom.interiorWalls.any { it.x == x && it.y == y }) return false
+        if (targetRoom.features.any { it.x == x && it.y == y && it.blocking }) return false
         if (x in 1..8 && y in 1..8) return true
         if ((x == 0 || x == 9) && (y == 0 || y == 9)) return false
-
         val direction = when {
             y == 0 -> DungeonDirection.NORTH
             y == 9 -> DungeonDirection.SOUTH
@@ -132,12 +164,7 @@ fun PersistentDungeonScreenV034(
             else -> DungeonDirection.EAST
         }
         val offset = if (direction == DungeonDirection.NORTH || direction == DungeonDirection.SOUTH) x else y
-        val wall = floor.wallFor(targetRoom, direction)
-        return when (wall.kind) {
-            SharedWallKind.SOLID -> false
-            SharedWallKind.DOORWAY -> wall.doorwayOffset == offset
-            SharedWallKind.OPEN -> offset in 1..8
-        }
+        return wallPassable(floor.wallFor(targetRoom, direction), offset)
     }
 
     fun move(direction: DungeonDirection) {
@@ -147,64 +174,74 @@ fun PersistentDungeonScreenV034(
             if (!cellWalkable(room, nx, ny)) return
             squareX = nx
             squareY = ny
-            persist()
+            persistPosition()
             return
         }
 
-        val atBoundary = when (direction) {
+        val boundary = when (direction) {
             DungeonDirection.NORTH -> squareY == 0
             DungeonDirection.SOUTH -> squareY == 9
             DungeonDirection.WEST -> squareX == 0
             DungeonDirection.EAST -> squareX == 9
         }
-        if (!atBoundary) return
+        if (!boundary) return
 
         val offset = if (direction == DungeonDirection.NORTH || direction == DungeonDirection.SOUTH) squareX else squareY
         val wall = floor.wallFor(room, direction)
-        val crossingAllowed = when (wall.kind) {
-            SharedWallKind.SOLID -> false
-            SharedWallKind.DOORWAY -> wall.doorwayOffset == offset
-            SharedWallKind.OPEN -> offset in 1..8
-        }
-        if (!crossingAllowed) return
+        if (!wallPassable(wall, offset)) return
 
-        val nrx = roomX + direction.dx
-        val nry = roomY + direction.dy
-        if (nrx !in 0..9 || nry !in 0..9) return
-        val next = floor.roomAt(nrx, nry)
-        val nsx = when (direction) {
+        val nextRoomX = roomX + direction.dx
+        val nextRoomY = roomY + direction.dy
+        if (nextRoomX !in 0..9 || nextRoomY !in 0..9) return
+        val nextRoom = floor.roomAt(nextRoomX, nextRoomY)
+        if (!nextRoom.present) return
+
+        val nextSquareX = when (direction) {
             DungeonDirection.WEST -> 9
             DungeonDirection.EAST -> 0
             else -> squareX
         }
-        val nsy = when (direction) {
+        val nextSquareY = when (direction) {
             DungeonDirection.NORTH -> 9
             DungeonDirection.SOUTH -> 0
             else -> squareY
         }
-        if (!cellWalkable(next, nsx, nsy)) return
+        if (!cellWalkable(nextRoom, nextSquareX, nextSquareY)) return
 
-        roomX = nrx
-        roomY = nry
-        squareX = nsx
-        squareY = nsy
-        floorState.currentRoom = DungeonCoord(roomX, roomY)
+        roomX = nextRoomX
+        roomY = nextRoomY
+        squareX = nextSquareX
+        squareY = nextSquareY
+        floorState.currentRoom = V2DungeonCoord(roomX, roomY)
         floorState.discoveredRooms += floorState.currentRoom.id
-        DungeonFloorRepository.saveState(context, floorState)
-        floorState = floorState.copy(discoveredRooms = floorState.discoveredRooms.toMutableSet())
-        persist()
+        if (nextRoom.type == V2RoomType.SECRET) floorState.discoveredSecretRooms += floorState.currentRoom.id
+        V2DungeonFloorRepository.saveState(context, floorState)
+        floorState = floorState.copy(
+            discoveredRooms = floorState.discoveredRooms.toMutableSet(),
+            discoveredSecretRooms = floorState.discoveredSecretRooms.toMutableSet()
+        )
+        persistPosition()
     }
+
+    val hiddenSecretWall = room.connections.map { direction -> direction to floor.wallFor(room, direction) }
+        .firstOrNull { (_, wall) -> wall.kind == V2WallKind.SECRET && wall.key !in floorState.unlockedDoors }
 
     Column(
         Modifier.fillMaxSize().background(V034Dark).padding(bottom = 82.dp).verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("TOWER DUNGEON", color = V034Gold, fontWeight = FontWeight.Black, fontSize = 24.sp, modifier = Modifier.padding(top = 8.dp))
-        Text("Floor ${floor.floor} • Tier ${floor.tier} • Room ($roomX,$roomY) • Square ($squareX,$squareY)", color = V034Cream, fontSize = 11.sp)
-        Text("Master dungeon art • one square per move • ${floorState.discoveredRooms.size}/100 rooms discovered", color = Color.Gray, fontSize = 9.sp)
+        Text(
+            "Floor ${floor.floor} • Tier ${floor.tier} • ${floor.style.name.replace('_', ' ')} • ${floor.size.name} (${floor.roomCount} rooms)",
+            color = V034Cream,
+            fontSize = 10.sp
+        )
+        Text("Room ($roomX,$roomY) • Square ($squareX,$squareY) • ${room.type.name.replace('_', ' ')} / ${room.shape.name.replace('_', ' ')}", color = V034Cream, fontSize = 9.sp)
+        Text("${floorState.discoveredRooms.size}/${floor.roomCount} rooms discovered • only this 10×10 room is rendered", color = Color.Gray, fontSize = 9.sp)
 
         DungeonRoomCanvasV034(
             floor = floor,
+            state = floorState,
             room = room,
             squareX = squareX,
             squareY = squareY,
@@ -219,26 +256,61 @@ fun PersistentDungeonScreenV034(
             onEast = { move(DungeonDirection.EAST) }
         )
 
-        Card(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp), colors = CardDefaults.cardColors(containerColor = V034Brown)) {
-            Row(Modifier.fillMaxWidth().padding(9.dp), verticalAlignment = Alignment.CenterVertically) {
-                EnemyPortraitV034(roomEnemy, Modifier.size(112.dp))
-                Column(Modifier.padding(start = 9.dp)) {
-                    Text(roomEnemy.name, color = if (roomEnemy.isBoss) Color(0xFFFF7867) else V034Gold, fontWeight = FontWeight.Black, fontSize = 14.sp)
-                    Text(roomEnemy.role, color = V034Cream, fontSize = 9.sp)
-                    Text("STR ${roomEnemy.stats.strength} • DEX ${roomEnemy.stats.dexterity} • CON ${roomEnemy.stats.constitution} • HP ${roomEnemy.hp} • AC ${roomEnemy.armorClass} • Move ${roomEnemy.move}", color = V034Cream, fontSize = 8.sp)
-                    Text(roomEnemy.weaponText, color = Color(0xFFC8B8A1), fontSize = 8.sp)
-                    roomEnemy.elementalAttack?.let { Text("Element: ${it.name}", color = Color(0xFFBFD8FF), fontWeight = FontWeight.Bold, fontSize = 8.sp) }
-                }
-            }
+        hiddenSecretWall?.let { (direction, wall) ->
+            Button(onClick = {
+                floorState.unlockedDoors += wall.key
+                V2DungeonFloorRepository.saveState(context, floorState)
+                floorState = floorState.copy(unlockedDoors = floorState.unlockedDoors.toMutableSet())
+            }) { Text("Search ${direction.name.lowercase().replaceFirstChar { it.uppercase() }} Wall") }
         }
 
-        if (floor.floor == 10 && room.type == DungeonRoomType.BOSS && !floorState.bossDefeated) {
-            Text("FLOOR 10 BOSS • Stormsting Sovereign is the only boss on Floors 1-10", color = Color(0xFFFF8A70), fontWeight = FontWeight.Bold, fontSize = 10.sp)
-            TextButton(onClick = {
-                floorState.bossDefeated = true
-                DungeonFloorRepository.saveState(context, floorState)
-                floorState = floorState.copy(bossDefeated = true)
-            }) { Text("Development: Mark Stormsting Defeated", color = Color(0xFFE8A38D)) }
+        if (roomEnemy != null && activeEncounter != null) {
+            Card(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp), colors = CardDefaults.cardColors(containerColor = V034Brown)) {
+                Row(Modifier.fillMaxWidth().padding(9.dp), verticalAlignment = Alignment.CenterVertically) {
+                    EnemyPortraitV034(roomEnemy, Modifier.size(112.dp))
+                    Column(Modifier.padding(start = 9.dp)) {
+                        Text(roomEnemy.name, color = if (roomEnemy.isBoss) Color(0xFFFF7867) else V034Gold, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                        Text(roomEnemy.role, color = V034Cream, fontSize = 9.sp)
+                        Text("STR ${roomEnemy.stats.strength} • DEX ${roomEnemy.stats.dexterity} • CON ${roomEnemy.stats.constitution} • HP ${roomEnemy.hp} • AC ${roomEnemy.armorClass} • Move ${roomEnemy.move}", color = V034Cream, fontSize = 8.sp)
+                        Text(roomEnemy.weaponText, color = Color(0xFFC8B8A1), fontSize = 8.sp)
+                        roomEnemy.elementalAttack?.let { Text("Element: ${it.name}", color = Color(0xFFBFD8FF), fontWeight = FontWeight.Bold, fontSize = 8.sp) }
+                        TextButton(onClick = {
+                            floorState.defeatedEnemies += activeEncounter.id
+                            if (activeEncounter.boss) floorState.bossDefeated = true
+                            V2DungeonFloorRepository.saveState(context, floorState)
+                            floorState = floorState.copy(
+                                defeatedEnemies = floorState.defeatedEnemies.toMutableSet(),
+                                bossDefeated = floorState.bossDefeated
+                            )
+                        }) { Text("Development: Mark Defeated", color = Color(0xFFE8A38D), fontSize = 9.sp) }
+                    }
+                }
+            }
+        } else {
+            Text("No active enemy encounter in this room.", color = Color(0xFF9D927F), fontSize = 9.sp)
+        }
+
+        if (floor.floor == 10 && room.type == V2RoomType.BOSS && !floorState.bossDefeated) {
+            Text("FLOOR 10 BOSS • Stormsting Sovereign • 2 dagger attacks + 1 short sword attack • Lightning", color = Color(0xFFFF8A70), fontWeight = FontWeight.Bold, fontSize = 9.sp)
+        }
+
+        activeTreasure?.let { treasure ->
+            Card(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF3A2B19))) {
+                Column(Modifier.padding(8.dp)) {
+                    Text(if (treasure.bossChest) "BOSS CHEST" else "TREASURE", color = V034Gold, fontWeight = FontWeight.Black)
+                    Text(treasure.table.replace('_', ' '), color = V034Cream, fontSize = 9.sp)
+                    Button(onClick = {
+                        floorState.openedChests += treasure.id
+                        floorState.collectedLoot += treasure.id
+                        V2DungeonFloorRepository.saveState(context, floorState)
+                        floorState = floorState.copy(
+                            openedChests = floorState.openedChests.toMutableSet(),
+                            collectedLoot = floorState.collectedLoot.toMutableSet()
+                        )
+                        onRecoverLoot(floor.tier)
+                    }) { Text("Collect Treasure") }
+                }
+            }
         }
 
         room.stairs?.let { stairs ->
@@ -246,16 +318,17 @@ fun PersistentDungeonScreenV034(
             Text("Stairs ${stairs.type.uppercase()} at (${stairs.x},${stairs.y})", color = Color(0xFFBFD8FF), fontSize = 10.sp)
             if (stairs.type == "up" && standing) {
                 val locked = floor.bossRequired && !floorState.bossDefeated
-                Button(onClick = onAdvanceFloor, enabled = !locked) { Text(if (locked) "Stairs Up Locked — Defeat Boss" else "Use Stairs Up") }
+                Button(onClick = onAdvanceFloor, enabled = !locked) {
+                    Text(if (locked) "Stairs Up Locked — Defeat Boss" else "Use Stairs Up")
+                }
             }
         }
 
         Card(Modifier.fillMaxWidth().padding(10.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF261E18))) {
             Column(Modifier.padding(9.dp)) {
-                Text("PERSISTENT FLOOR + POSITION", color = V034Gold, fontWeight = FontWeight.Black, fontSize = 11.sp)
-                Text("Generated geometry, door openings, exact room and exact movement square are remembered.", color = V034Cream, fontSize = 9.sp)
+                Text("PERSISTENT PROCEDURAL FLOOR • SCHEMA V2", color = V034Gold, fontWeight = FontWeight.Black, fontSize = 11.sp)
+                Text("Seed ${floor.seed} • geometry, shared walls, door offsets, room roles, shapes, encounters, treasure and state are saved permanently.", color = V034Cream, fontSize = 8.sp)
                 Text("Hero L$level • XP $xp/${xpRequiredForNextLevel(xp)} • $helperCount helpers • ${frogColor.displayName} immunity", color = Color(0xFFC8B8A1), fontSize = 9.sp)
-                Button(onClick = { onRecoverLoot(floor.tier) }) { Text("Test Recover Tier ${floor.tier} Loot (+${floor.tier} XP)") }
             }
         }
 
@@ -266,13 +339,13 @@ fun PersistentDungeonScreenV034(
 @Composable
 private fun DungeonMovePadV034(onNorth: () -> Unit, onSouth: () -> Unit, onWest: () -> Unit, onEast: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Button(onClick = onNorth, modifier = Modifier.size(width = 104.dp, height = 50.dp)) { Text("↑", fontSize = 22.sp) }
+        Button(onClick = onNorth, modifier = Modifier.size(width = 112.dp, height = 54.dp)) { Text("↑", fontSize = 24.sp) }
         Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = onWest, modifier = Modifier.size(width = 104.dp, height = 50.dp)) { Text("←", fontSize = 22.sp) }
+            Button(onClick = onWest, modifier = Modifier.size(width = 112.dp, height = 54.dp)) { Text("←", fontSize = 24.sp) }
             Text("MOVE", color = V034Cream, fontWeight = FontWeight.Bold)
-            Button(onClick = onEast, modifier = Modifier.size(width = 104.dp, height = 50.dp)) { Text("→", fontSize = 22.sp) }
+            Button(onClick = onEast, modifier = Modifier.size(width = 112.dp, height = 54.dp)) { Text("→", fontSize = 24.sp) }
         }
-        Button(onClick = onSouth, modifier = Modifier.size(width = 104.dp, height = 50.dp)) { Text("↓", fontSize = 22.sp) }
+        Button(onClick = onSouth, modifier = Modifier.size(width = 112.dp, height = 54.dp)) { Text("↓", fontSize = 24.sp) }
     }
 }
 
@@ -299,8 +372,9 @@ private fun EnemyPortraitV034(enemy: DungeonEnemyDisplay, modifier: Modifier) {
 
 @Composable
 private fun DungeonRoomCanvasV034(
-    floor: DungeonFloorData,
-    room: DungeonRoomData,
+    floor: V2DungeonFloorData,
+    state: V2DungeonFloorState,
+    room: V2DungeonRoomData,
     squareX: Int,
     squareY: Int,
     frogColor: FrogColor,
@@ -325,11 +399,13 @@ private fun DungeonRoomCanvasV034(
 
         fun drawEdge(direction: DungeonDirection) {
             val wall = floor.wallFor(room, direction)
+            val secretUnlocked = wall.key in state.unlockedDoors
             for (i in 0..9) {
                 val shouldDraw = when (wall.kind) {
-                    SharedWallKind.SOLID -> true
-                    SharedWallKind.DOORWAY -> i != wall.doorwayOffset
-                    SharedWallKind.OPEN -> i == 0 || i == 9
+                    V2WallKind.SOLID -> true
+                    V2WallKind.DOORWAY -> i != wall.doorwayOffset
+                    V2WallKind.OPEN -> i == 0 || i == 9
+                    V2WallKind.SECRET -> if (secretUnlocked) i != wall.doorwayOffset else true
                 }
                 if (!shouldDraw) continue
                 val x = when (direction) { DungeonDirection.WEST -> 0; DungeonDirection.EAST -> 9; else -> i }
@@ -337,12 +413,11 @@ private fun DungeonRoomCanvasV034(
                 drawDungeonAtlasTile(wallAtlas, wall.wallVariants.getOrElse(i) { 1 }, 5, x * cell, y * cell, cell, cell)
             }
 
-            if (wall.kind == SharedWallKind.DOORWAY && wall.doorwayOffset != null) {
+            val showDoor = wall.kind == V2WallKind.DOORWAY || (wall.kind == V2WallKind.SECRET && secretUnlocked)
+            if (showDoor && wall.doorwayOffset != null) {
                 val i = wall.doorwayOffset
                 val x = when (direction) { DungeonDirection.WEST -> 0; DungeonDirection.EAST -> 9; else -> i }
                 val y = when (direction) { DungeonDirection.NORTH -> 0; DungeonDirection.SOUTH -> 9; else -> i }
-                val style = ((floor.seed + room.x * 31L + room.y * 17L).absoluteValue % 3L).toInt()
-                val openVariant = when (style) { 0 -> 2; 1 -> 5; else -> 8 }
                 val rotation = when (direction) {
                     DungeonDirection.NORTH -> 0f
                     DungeonDirection.SOUTH -> 180f
@@ -350,27 +425,34 @@ private fun DungeonRoomCanvasV034(
                     DungeonDirection.EAST -> 90f
                 }
                 rotate(rotation, pivot = Offset((x + 0.5f) * cell, (y + 0.5f) * cell)) {
-                    drawDungeonAtlasTile(doors, openVariant, 3, x * cell, y * cell, cell, cell)
+                    drawDungeonAtlasTile(doors, wall.doorVariant.coerceIn(1, 9), 3, x * cell, y * cell, cell, cell)
                 }
             }
         }
         DungeonDirection.values().forEach(::drawEdge)
 
-        room.interiorWalls.forEach { drawDungeonAtlasTile(wallAtlas, it.variant, 5, it.x * cell, it.y * cell, cell, cell) }
-        room.pillars.forEach { drawDungeonAtlasTile(pillars, it.variant, 4, it.x * cell, it.y * cell, cell, cell) }
-
-        if (room.type == DungeonRoomType.STANDARD || room.type == DungeonRoomType.OPEN || room.type == DungeonRoomType.PILLAR) {
-            val seed = (floor.seed + room.x * 101L + room.y * 211L).absoluteValue
-            val variant = (seed % 12L).toInt() + 1
-            val dx = 2 + ((seed / 13L) % 5L).toInt()
-            val dy = 2 + ((seed / 29L) % 5L).toInt()
-            if (room.pillars.none { it.x == dx && it.y == dy } && room.interiorWalls.none { it.x == dx && it.y == dy }) {
-                drawDungeonAtlasTile(details, variant, 4, dx * cell, dy * cell, cell, cell)
+        room.interiorWalls.forEach { wall ->
+            drawDungeonAtlasTile(wallAtlas, wall.variant, 5, wall.x * cell, wall.y * cell, cell, cell)
+        }
+        room.features.forEach { feature ->
+            if (feature.type == V2FeatureType.PILLAR || feature.type == V2FeatureType.ROCK_SPIRE) {
+                drawDungeonAtlasTile(pillars, ((feature.variant - 1) % 4) + 1, 4, feature.x * cell, feature.y * cell, cell, cell)
+            } else {
+                drawDungeonAtlasTile(details, ((feature.variant - 1) % 12) + 1, 4, feature.x * cell, feature.y * cell, cell, cell)
             }
         }
 
-        room.stairs?.let {
-            drawDungeonAtlasTile(if (it.type == "down") stairsDown else stairsUp, it.variant, 3, 3.05f * cell, 3.05f * cell, 3.9f * cell, 3.9f * cell)
+        room.stairs?.let { stairs ->
+            val atlas = if (stairs.type == "down") stairsDown else stairsUp
+            drawDungeonAtlasTile(
+                atlas,
+                stairs.variant,
+                3,
+                (stairs.x - 1.25f) * cell,
+                (stairs.y - 1.25f) * cell,
+                2.5f * cell,
+                2.5f * cell
+            )
         }
 
         for (i in 0..10) {
